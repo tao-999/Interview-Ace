@@ -4,6 +4,61 @@
 
 ---
 
+# 前端 · 计算机网络高频面试题（35 题）
+
+1) **HTTP/1.1 vs HTTP/2 vs HTTP/3（QUIC）**：多路复用、头阻塞（HoLB）、优先级/流量控制与握手差异？  
+2) **TCP/UDP/QUIC**：连接建立（3/4 次握手、0-RTT/1-RTT）、丢包/拥塞控制、重传与对前端体验的影响？  
+3) **TLS 基础**：证书链、SNI、ALPN、HSTS；浏览器如何校验证书与中间人攻击的防护？  
+4) **DNS 与延迟**：A/AAAA/CNAME/NS/TXT 记录、TTL、递归解析；`dns-prefetch`/`preconnect` 的作用与时机？  
+5) **缓存体系**：`Cache-Control`（`max-age/s-maxage/public/private/immutable/stale-while-revalidate/stale-if-error`）、`ETag` vs `Last-Modified`、强/协商缓存与 304 流程？  
+6) **服务端与 CDN 缓存联动**：`Vary`/`Surrogate-Control`、边缘缓存键（含查询/头部）、多区域回源与回源保护？  
+7) **内容协商**：`Accept-*`（`Accept-Encoding/Language/Charset`）、`Content-Encoding`（gzip/br/zstd）、`Content-Type` 与 `Vary` 的正确搭配？  
+8) **状态码语义**：2xx/3xx/4xx/5xx 常见与冷门（如 103/204/206/308/412/421/429/451）；重定向链与缓存交互？  
+9) **请求幂等与重试**：GET/HEAD/PUT/DELETE 的理论幂等与实践陷阱；Idempotency-Key 的设计？  
+10) **分块与流式**：`Transfer-Encoding: chunked`、Fetch/Streams API（`ReadableStream`）的读取与背压（backpressure）？  
+11) **大文件与断点续传**：Range 请求（206）、多段并发下载、ETag/If-Range 保证一致性？  
+12) **同源策略与 CORS**：预检（OPTIONS）触发条件、`Access-Control-*` 头、凭证模式、`opaque` 响应与缓存？  
+13) **跨源隔离**：`COOP/COEP/CORP` 三兄弟、`SharedArrayBuffer` 的启用条件与安全权衡？  
+14) **安全基线**：CSP（`default-src`、nonce/hash）、Referrer-Policy、X-Frame-Options/`frame-ancestors`、Mixed Content 与升级策略？  
+15) **Cookie 策略**：`SameSite=Lax/Strict/None`、`Secure/HttpOnly`、作用域与优先级、会话粘滞与子域共享？  
+16) **认证与会话**：Bearer/JWT vs Cookie、刷新令牌、前端如何安全存储与跨域携带？  
+17) **网络优先级**：HTTP/2 旧优先级树 vs HTTP Priority（`Priority`/`priority`）、`<link rel=preload>` 与优先级提示（Priority Hints）区别？  
+18) **预加载族**：`preload/prefetch/prerender/preconnect` 的语义、时机与踩坑；103 Early Hints 与 `<link rel=preload>` 协作？  
+19) **图片/字体传输策略**：`srcset/sizes`、`Content-DPR`/Client Hints、`font-display`、字体子集化与缓存键设计？  
+20) **上传与关闭页**：`fetch({ keepalive: true })` vs `navigator.sendBeacon` 的限制与可靠性取舍？  
+21) **取消与超时**：`AbortController`、超时/重试退避（exponential backoff）、幂等配合如何设计？  
+22) **实时通信选型**：WebSocket vs SSE vs WebRTC vs WebTransport 的能力、拥塞/防火墙友好度与落地场景？  
+23) **HTTP/3 in practice**：QUIC 流/连接 ID、迁移与丢包对比 H2 的体验差异；中间盒与降级路径？  
+24) **代理与网络栈**：正向/反向代理、负载均衡（L7/L4）、超时/重试/粘性会话对前端的表现影响？  
+25) **边缘计算**：Edge Functions/边缘 SSR 的冷启动、地理亲和、缓存失效与回源策略？  
+26) **SWR/ISR 与再验证**：静态+增量（ISR）/`stale-while-revalidate` 的前后端协作与一致性风险？  
+27) **请求合并与去重**：浏览器层面的连接复用、H2 多路复用；应用层去重（同 key 请求合并、竞态与最后写赢）？  
+28) **GraphQL over HTTP**：缓存难点（POST、GraphQL-GET、Persisted Queries）、批量（`@defer/@stream`）与网络层治理？  
+29) **Range/分片上传**：大文件切片、并发/顺序策略、校验（MD5/CRC/ETag）与秒传设计？  
+30) **网络错误语义**：DNS 失败、TLS 失败、CORS 拒绝、Service Worker 拦截、`TypeError: Failed to fetch` 的精准归因？  
+31) **Service Worker 网络策略**：Cache First/Network First/Stale-While-Revalidate、离线兜底与版本迁移（跳票/清缓存）？  
+32) **优雅降级**：弱网/高延迟/丢包环境下的超时、断点续传、占位骨架与渐进式渲染策略？  
+33) **请求头/响应头精讲**：`Origin/Referer/Accept/Authorization/If-None-Match/ETag/Date/Age/Expires/Retry-After` 的组合拳？  
+34) **重定向与安全**：开放重定向检测、SameSite 与跨站跳转、跨域重定向对凭证/缓存的影响？  
+35) **监控与采样**：Resource Timing/Navigation Timing/Long Tasks、`PerformanceObserver`、错误上报与采样策略（流量/地域/设备）？
+36) **WebSocket 握手与升级**：HTTP `Upgrade`/`Connection`、`Sec-WebSocket-Key/Accept` 流程；子协议（`Sec-WebSocket-Protocol`）与二进制帧/文本帧的差异？  
+37) **WebSocket 可靠性与性能**：心跳/断线重连/指数退避与抖动；背压与大消息分片；`permessage-deflate` 压缩的收益与风险？  
+38) **SSE vs HTTP Streaming**：浏览器支持、自动重连、缓存/代理兼容性与典型落地（行情/日志/增量）差异？  
+39) **WebRTC DataChannel vs WebSocket**：可靠/不可靠传输、时延/拥塞控制、NAT 穿透能力；何时选用哪一个？  
+40) **STUN/TURN/ICE**：候选类型（host/srflx/relay）、打洞流程、优先级/选路；TURN 中继的成本与企业内网限制？  
+41) **HTTP/3（QUIC）细节**：0-RTT 重放风险、连接 ID 与连接迁移、路径验证、`Alt-Svc` 协商与中间盒兼容性？  
+42) **拥塞控制与体验**：CUBIC vs BBR 的差异；如何通过 RUM（LCP/INP/首帧/卡顿）侧信号定位“网络 vs 渲染”瓶颈？  
+43) **HoLB 与多路复用**：H2 的“流级 HoLB”与 H3 的“无传输层 HoLB”；弱网下资源“合并 vs 拆分”的策略选择？  
+44) **DNS 现代化**：DoH/DoT、EDNS、DNSSEC 的基本概念与前端可感知影响；IPv6/IPv4 **Happy Eyeballs** 对首包时延的作用？  
+45) **MTU/PMTUD 与分片**：路径 MTU 发现、DF 位、黑洞路由的表现；前端资源（大图/视频分块）如何规避分片代价？  
+46) **代理与隧道**：HTTP `CONNECT`、反向代理/负载均衡对 WebSocket/SSE 的支持差异；WAF/CDN 场景下的头部透传与超时策略？  
+47) **OAuth 2.1 / OIDC 跨域登录**：授权码 + PKCE 流程、`state` 防 CSRF、回跳域安全；前端 token 刷新/存储与跨域限制？  
+48) **优先级信号**：`fetchpriority`、`<link rel="preload">`、HTTP/2/3 Priority 的区别与配合；如何避免抢占关键渲染资源？  
+49) **103 Early Hints + Preload**：服务器早发送链接提示的价值与坑点；如何与缓存/优先级/预连接协作避免重复下载？  
+50) **Reporting API / NEL**：网络错误与策略违规的上报机制、采样与隐私考量；如何与前端埋点/告警联动构建闭环？
+
+---
+
 ## Flutter 高频面试题（35 题）
 
 1) Flutter 渲染管线从 **Widget → Element → RenderObject** 各层分别做什么？如何协同？  
