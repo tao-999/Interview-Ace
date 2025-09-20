@@ -380,32 +380,32 @@
 11) 类型与相等：`==` vs `===`、`Object.is`、`NaN`/`0`/`-0`、`typeof/instanceof` 与 `Symbol.toStringTag`？  
 12) 性能优化：去抖/节流、事件委托、V8 优化陷阱（隐藏类、稀疏数组）、热路径与逃逸分析的影响？
 
-## CSS
-13) 层叠与优先级：特指度、`!important`、Cascade Layers（`@layer`）如何落地一套可维护的样式层级？  
-14) 布局选型：Flex vs Grid 的核心差异与陷阱（`flex-basis` vs `width`，min-content/auto 轨道）？  
-15) `subgrid` 的使用场景与相对嵌套网格/自动放置的优势与限制？  
-16) 容器查询（`@container size/style`）与容器单位（`cqw/cqh/cqi/cqb`）如何配合媒体查询？  
-17) `:has()` 选择器的能力边界与性能考量；用纯 CSS 实现交互逻辑的套路？  
-18) 逻辑属性与国际化：`margin-inline/block`、`writing-mode`、RTL 布局的注意事项？  
-19) 响应式图片与比例：`aspect-ratio`、`object-fit`、`srcset/sizes`、`AVIF/WebP` 的取舍？  
-20) 动画性能：`transform/opacity` 优先、`will-change`、合成层与 CSS 动画 vs Web Animations API 的权衡？  
-21) CSS 自定义属性与级联：主题切换、`color-mix()`、`lab/lch` 颜色空间的实践与兼容？  
-22) 现代函数：`clamp()/min()/max()/fit-content()`、流式排版（fluid type）怎么写？  
-23) 样式隔离：BEM、CSS Modules、Shadow DOM、`@scope`（如支持）的优缺点与团队规范？  
-24) 字体与稳健性：`@font-face`、字体预加载、`font-display`，减少 FOUT/FOIT 与布局抖动（CLS）的策略？
+## CSS（常见面试题版）
+13) 盒模型与 `box-sizing`：标准盒/怪异盒、`margin` 合并、BFC 触发与典型应用（清除浮动、两栏自适应）。  
+14) 层叠与优先级：特指度、`!important`、`z-index` 与**层叠上下文**的创建时机与常见误判。  
+15) 布局选型：Flex 常见模式（居中、等高、三栏）与坑点（`flex-basis`/`min-width`），何时用 Grid、两者边界。  
+16) 定位与居中：`position`（relative/absolute/fixed/sticky）与多种水平+垂直居中方案对比。  
+17) 单位与尺寸：`px/%/em/rem/vw/vh` 的继承与计算；根字号与移动端适配策略。  
+18) 响应式与移动端：`<meta viewport>`、断点规划、流式排版、弹性媒体（`max-width:100%`）。  
+19) 选择器与伪类/伪元素：`nth-child` vs `nth-of-type`、`:not()`、`::before/::after`，选择器可维护性与性能。  
+20) 图像与图标：`<img>` vs `background-image`、SVG（内联/雪碧）vs Icon Font、多倍图与 `image-set()`。  
+21) 动画与过渡性能：`transform/opacity` 优先、`will-change` 边界、合成层与卡顿排查。  
+22) CSS 模块化与规范：BEM、预处理器（Sass/LESS）、PostCSS（Autoprefixer）、CSS Modules 的作用域策略。  
+23) 字体与稳健性：`@font-face`、字体子集/预加载、`font-display`（swap/optional）、降低 FOUT/FOIT 与 CLS。  
+24) CSS 自定义属性（变量）与主题：暗黑模式/多品牌主题切换、运行时覆写变量的组织与降级。
 
-## DOM / BOM
-25) 事件模型：捕获/目标/冒泡阶段、`stopPropagation/stopImmediatePropagation`、`passive` 监听的实际影响？  
-26) 自定义事件：`CustomEvent/dispatchEvent` 的正确用法；框架合成事件与原生事件的差异与协作？  
-27) Shadow DOM & Web Components：开放/封闭 shadow、插槽、样式穿透（`::part/::slotted`）的边界？  
-28) 渲染流水线：回流（reflow）/重绘（repaint）/合成（composite）；如何避免强制同步布局（layout thrashing）？  
-29) 观察者 API：`MutationObserver` vs `IntersectionObserver` vs `ResizeObserver` 的适用差异与常见组合？  
-30) 剪贴板/拖拽/文件 API：权限、粘贴图片/HTML、拖拽目录、DataTransfer 安全与沙箱策略？  
-31) 历史与导航：`history.pushState`、`scrollRestoration`、`Navigation API`（如可用）的回退与过渡处理？  
-32) 存储与同源：`localStorage/sessionStorage/IndexedDB` 的选择；COOP/COEP 与 `SharedArrayBuffer` 的关系？  
-33) Web 安全：XSS/CSRF/Clickjacking 的前端防护；CSP/Trusted Types；富文本消毒（DOMPurify）的边界？  
-34) Service Worker：缓存策略（CacheStorage）、离线优先/网络优先、版本更新与回滚的正确姿势？  
-35) 性能与观测：Web Vitals（LCP/CLS/INP）采集、`PerformanceObserver`、Long Tasks 与交互延迟优化路线？
+## DOM / BOM（常见面试题版）
+25) 事件模型与委托：捕获/目标/冒泡、`stopPropagation`/`stopImmediatePropagation`、`passive` 的影响与使用场景。  
+26) 表单与输入：提交前拦截、原生校验 API、自定义校验、输入法合成事件（`compositionstart/update/end`）。  
+27) DOM 操作与性能：`DocumentFragment`/模板、批量读写合并、`offsetWidth` 等强制回流触发点与规避。  
+28) 渲染流水线：回流（reflow）/重绘（repaint）/合成（composite），避免 layout thrashing 的实践。  
+29) 观察者 API：`MutationObserver` / `IntersectionObserver` / `ResizeObserver` 的差异、典型组合（懒加载/无限滚动/自适应容器）。  
+30) 剪贴板/拖拽/文件：权限模型、粘贴图片/HTML、拖拽目录、`DataTransfer` 安全与沙箱约束。  
+31) 历史与导航：`history.pushState/replaceState`、`scrollRestoration`、单页过渡与 `Navigation API` 的兼容策略。  
+32) 存储与同源：`localStorage/sessionStorage/IndexedDB` 的选择；跨标签页同步（`BroadcastChannel`/`storage` 事件）；COOP/COEP 与 `SharedArrayBuffer`。  
+33) Web 安全常识：XSS/CSRF/Clickjacking 的前端防护；CSP/Trusted Types；富文本消毒（DOMPurify）的边界。  
+34) Service Worker 与缓存：`CacheStorage` 策略、离线优先/网络优先、版本更新（跳过等待/回滚）流程。  
+35) 性能与观测：Web Vitals（LCP/CLS/INP）采集、`PerformanceObserver`、Long Tasks 与交互延迟优化路径。
 
 ---
 # 大前端算法高频面试题清单（50 题）
