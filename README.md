@@ -44,7 +44,7 @@
 
 ---
 
-##  React 高频面试题（35 题）
+##  React 高频面试题（50 题）
 
 1) 并发渲染（**Concurrent Rendering**）在 React 18 中做了什么？调度/可中断渲染/优先级如何工作？  
 2) `useTransition` 与 `useDeferredValue` 的区别与典型使用场景？  
