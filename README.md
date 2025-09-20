@@ -503,159 +503,159 @@
 ---
 # Web3 高频面试题清单（35 题）
 
-1) 账户抽象（AA）：EOA vs 合约账户的根本差异；**EIP-4337** 与“原生 AA”（如 3074/7702 路线）的对比与迁移路径？  
-2) 以太坊费模型：**EIP-1559** 的 base fee / priority fee 如何协作？钱包如何做 Gas 估算与小费策略？  
-3) **EIP-4844（Proto-Danksharding）**：Blob 数据、Blob Gas、对 L2 成本与数据可用性的影响？  
-4) Rollup 体系：**Optimistic vs ZK Rollup** 的证明/挑战窗口/退出时间/安全假设各是什么？  
-5) 数据可用性（DA）：以太坊 DA vs 外部 DA（Celestia/EigenDA 等），Rollup 在 DA 上的取舍与风险？  
-6) MEV 基础：套利/清算/夹击三大类；从 mempool 到 PBS（Proposer-Builder Separation）的演进与影响？  
-7) 订单流与抗 MEV：私有内存池、保护 RPC、批量拍卖、SUAVE/Intent 系统的设计思路与权衡？  
-8) 共识与最终性：PoS slot/epoch、检查点与 finalized 的语义；再组织（reorg）与活性/安全性的取舍？  
-9) 分布式验证技术（**DVT**）：阈值签名/SSV 的工作原理，如何降低单点与惩罚（slashing）风险？  
-10) L2 Sequencer：中心化 Sequencer 的审查与停机风险；去中心化/共享 Sequencer、Based Rollup 的利弊？  
-11) 跨链桥安全：多签桥 vs 轻客户端桥 vs ZK/Optimistic 消息桥的信任模型比较与常见攻击面？  
-12) 代币标准：**ERC-20/721/1155** 的核心差异；**ERC-2612（Permit）**、**ERC-4626（Vault）** 的典型用法？  
-13) 升级方案：Transparent/UUPS 代理的架构差异；存储布局与“Storage Gap”如何避免踩坑？  
-14) 常见漏洞：重入、整数溢出、授权滥用、签名重放（`eth_sign`/`personal_sign`）与预防策略？  
-15) **EIP-712** Typed Data 签名：域分隔、链 ID、防钓鱼交互与钱包提示设计要点？  
-16) SELFDESTRUCT 变更：上海后 **EIP-6780** 对合约销毁/存储清理语义的影响与兼容策略？  
-17) 费与存储优化：`calldata` vs `memory`、存储打包、事件日志成本、EIP-3529 退款规则变化的影响？  
-18) DeFi 基础：恒定乘积 AMM、集中流动性（Uni v3）与 TWAP 价格的原理与边界？  
-19) 借贷与清算：抵押率、清算折扣、拍卖机制（英式/荷兰式）与价格源的抗操纵设计？  
-20) 预言机：Chainlink/Redstone/自建喂价的对比；TWAP/Medianizer 与闪电贷操纵防护？  
-21) 稳定币设计：法币抵押 vs 加密抵押 vs 算法稳定；铸赎机制、脱锚风险与恢复手段？  
-22) 质押与再质押：LST（stETH 等）与 LRT/EigenLayer 的收益与风险传染路径？  
-23) NFT 与元数据：ERC-721/1155、**ERC-2981** 版税约定；on-chain vs off-chain 元数据与持久化？  
-24) 钱包与密钥：多签（Safe）、**MPC**、AA 钱包（社交恢复、Session Key/Paymaster）各自的取舍？  
-25) 隐私与合规：零知识（SNARK/STARK）基础、选择器/Nullifier；混币器与制裁合规的工程边界？  
-26) 开发与测试栈：Hardhat/Foundry 对比；主网 fork、模糊测试（fuzz）、属性测试与覆盖率度量？  
-27) 静态/形式化分析：Slither/Mythril/Echidna/Certora 的适用场景与“不可变式（invariant）”设计？  
-28) 事件与索引：事件 schema 设计、The Graph/Substreams 索引管线、重组与幂等性处理？  
-29) 多链开发与运维：Chain ID/Nonce 差异、RPC 可靠性、重试/回滚、部署与权限（Owner/Timelock）治理？  
-30) 治理与金库安全：投票模型（Snapshot/链上）、代理/时间锁、防突袭（rage quit/guardian）机制？  
-31) 前端与签名交互：EIP-1193 Provider、`eth_requestAccounts`、权限会话/断开、硬件钱包与 WebAuthn 集成？  
-32) Intent-centric 设计：用户意图 → 求解器（Solver）竞价 → 清算结算的流程与与传统 swap 请求的差异？  
-33) L2 费用模型：L1 安全费用 + L2 执行费用的组成；**EIP-4337** Paymaster/AA Gas 支付体验？  
-34) 时间与随机性：`block.timestamp` 偏移风险、VRF/可验证随机源、跨链/跨批次的一致性问题？  
-35) 安全事件复盘：著名 DeFi/NFT/桥攻击归因分类（权限误配、预言机操纵、重入、初始化缺陷），如何建立预防清单与应急预案？
+1) 协议总览：请系统列出并简述前端必须掌握的以太坊/多链协议与标准（EIP-1193、EIP-1474、EIP-1559、EIP-3085、EIP-3326、EIP-712、EIP-1271、EIP-4361、EIP-2612、EIP-681 等），分别解决什么问题？  
+2) 多钱包连接：基于 **EIP-1193** 的 Provider 事件模型（`request`/`accountsChanged`/`chainChanged`）如何落地一个“连接/断开/切换账户与网络”的完整前端状态机？  
+3) WalletConnect v2：解释 **Pairing** 与 **Session** 的区别、**CAIP-2/10** 命名空间与权限协商；前端如何做“多链多账号选择”“断线重连”“会话续期”？  
+4) 链切换协议：**EIP-3085** `wallet_addEthereumChain` 与 **EIP-3326** `wallet_switchEthereumChain` 的差异；钱包不支持切换时，前端应如何降级与提示？  
+5) SSR/移动端适配：SSR 环境与移动端 Deep Link 下，如何检测 Provider、区分注入钱包与 App 跳转（WalletConnect/Universal Link），并保证首屏无报错？  
+6) 签名协议矩阵：`eth_sign`/`personal_sign`（EIP-191）与 `eth_signTypedData_*`（EIP-712）的原理差别、域分隔与防重放；前端何时用哪种，如何在 UI 上做“可读意图”提示？  
+7) SIWE 登录（EIP-4361）：挑战-响应流程与域/链绑定；多钱包/多链切换时，前端如何维持/失效登录态并与服务端会话联动？  
+8) 合约账户签名（EIP-1271）：前端如何在 EOA 与合约账户混合场景下验证签名与展示签名者身份？  
+9) 链上支付（1）：基于 **EIP-681**（Payment URI）与二维码的支付请求如何生成与解析？如何设计“金额/链/收款地址/备注”参数并防钓鱼？  
+10) 链上支付（2）：**ERC-20/Permit（EIP-2612/Permit2）** 支付链路的前端交互：离线授权 → 代扣 `transferFrom` → 成功回执；如何限制额度/到期并提供“撤销授权”入口？  
+11) 交易费用（EIP-1559）：`baseFee/maxFeePerGas/maxPriorityFeePerGas` 的关系；前端如何通过 `eth_feeHistory` 与 `eth_maxPriorityFeePerGas` 做稳健的小费建议与“加速/取消”替换交易？  
+12) 交易生命周期：`simulate (eth_call)` → `estimateGas` → `sendTransaction` → `wait` → `confirmations` 的状态机；如何处理 `nonce` 冲突、`replacement underpriced`、超时与 Reorg？  
+13) 只读/可写分层：在 viem/ethers 中如何抽象 **provider（读）** 与 **signer（写）**，并用链配置/地址表避免跨链读错？  
+14) 批量读取（Multicall）：Multicall2/3 的 `aggregate/tryAggregate` 差异；前端如何分页拆分长列表、处理部分回退并合并结果？  
+15) 日志与事件：`eth_getLogs` 的 topic 过滤与分段窗口策略；如何用 `finalized/safe` 区块标签与 `txHash+logIndex` 去重来对抗重组？  
+16) 索引取舍：直接链上日志 vs **The Graph/Substreams**；前端如何做“本地缓存 + 回放校准（区块水位线）”并保证幂等？  
+17) 代币交互：`decimals/allowance/approve/transferFrom` 的前端边界；如何避免“无限授权”与授权竞态，设计乐观 UI 与回滚？  
+18) NFT 元数据：`tokenURI` → IPFS/Arweave 网关解析、CID 校验、占位/缓存/失败回退；如何处理敏感内容遮罩与 NSFW 提示？  
+19) ENS 与 CCIP-Read：namehash/反解流程、**CCIP-Read** 链下读取的安全边界；前端如何降级并标注信任来源？  
+20) L2 费用与 EIP-4844：L1 数据费 + L2 执行费的组成、Blob 费对展示的影响；前端如何准确预估/对账并解释与主网差异？  
+21) 私有交易与 MEV 防护：公开 mempool vs 私有内存池（Flashbots Protect/MEV-Blocker）原理；前端如何一键切换 RPC 并处理“无公共 txhash/确认变慢”的 UX？  
+22) 跨链桥 UX：消息桥（Canonical/ZK/Optimistic）与流动性桥差异；前端怎样展示“提交/证明/执行”三阶段进度、费用拆分与失败回退路径？  
+23) 多签（Safe）适配：Safe Apps SDK/Tx Service 的工作方式；前端如何兼容“批量交易/阈值签名/队列执行/模拟结果”的可视化？  
+24) 账户抽象（EIP-4337）：UserOperation、Bundler、EntryPoint、Paymaster 的交互流程；前端如何解释“代付/限权 Session Key”并在不支持时回退到 EOA？  
+25) 自定义错误与 Revert 解码：Solidity Custom Errors 的 ABI 编解码；前端如何把 `CALL_EXCEPTION/data` 转换为用户可读的错误文案与行动建议？  
+26) 价格与预言机：Chainlink Aggregator 读取与 stale 检测；前端如何在报价/清算/滑点提示中使用 **TWAP/中位数** 并给出反操纵说明？  
+27) 隐私与零知识：前端本地/远端生成证明的取舍、证明大小/时间的反馈；如何在提交/验证失败时给出可诊断信息并建议降级？  
+28) 多链地址簿与 ENS：不同链同名地址冲突、EIP-55 校验和、地址-链绑定；如何在输入框做强校验与 ENS 头像渲染？  
+29) 速率限制与容错：多 RPC Fallback/加权、超时/指数退避/幂等重试；前端如何把“最终一致”呈现在 UI（重放按钮/错误快照）？  
+30) 安全签名 UX：对高风险方法（`approve`、`setApprovalForAll`、`permitAll`、`increaseAllowance`）如何在签名弹窗前给出“明示目的/额度/到期/可撤销”提示？  
+31) 交易模拟：Tenderly/Anvil/Foundry Fork 的 `eth_call` 预检如何在前端集成？哪些失败（权限/余额/路径）可以在发送前阻断并解释？  
+32) 链上支付风控：电商收款/订阅扣费的前端设计（固定金额/最小收到/截止时间/一次性授权 vs 定期授权）；如何防“换地址/链骗局”与混淆代币？  
+33) 代币列表安全：Token List（Uniswap 标准）的签名信任链；前端如何做来源白名单/哈希校验与“未知代币”强提示？  
+34) SDK 选型与包体：ethers v5/v6、viem、wagmi/RainbowKit 的体积与 tree-shaking 差异；如何按路由懒加载 ABI/链配置并避免 Node polyfill 膨胀？  
+35) 端到端设计题：实现“多钱包连接 + EIP-712 登录 + Multicall 批量余额查询 + Permit 代扣支付 + 1559 费用与私有 RPC 可选 + 事件/确认追踪（重组容错）”，请给出页面状态机与安全提示清单。  
 
 ---
 # TypeScript 高频面试题（35 题）
 
-1) 结构类型系统与“名义类型”的差异是什么？如何用“品牌类型（branded type）”模拟名义性？  
-2) 类型收窄（Control Flow Analysis）如何工作？`in / typeof / instanceof / 判空` 与可辨识联合的配合？  
-3) `any`、`unknown`、`never` 分别代表什么语义？各自的风险与使用边界？  
-4) 泛型参数的约束/默认值如何设计？分布式条件类型与 `infer` 推断有哪些典型用法？  
-5) 交叉类型与联合类型在可空性/可选属性上如何交互？`Partial<T>` 与可选属性有何差别？  
-6) 索引类型体系：`keyof`、索引访问类型、映射类型与键重映射（`as`）如何协作？  
-7) 模板字面量类型如何与字符串字面量/枚举配合实现“路径/路由”的类型安全？  
-8) 常用工具类型 `Pick/Omit/Record/ReturnType/Parameters/InstanceType/NonNullable/Required/Readonly` 的原理？  
-9) 函数类型的协变/逆变：参数双向协变（bivariance）与 `strictFunctionTypes` 的影响？  
-10) `this` 类型与 `noImplicitThis` 有什么关系？如何在函数签名中显式声明 `this` 参数？  
-11) 函数重载（overload）与联合/泛型的取舍？实现签名与重载签名规则有哪些坑？  
-12) `interface` 与 `type` 的差异与取舍？何时需用声明合并、递归类型或计算属性？  
-13) 模块解析与别名：`baseUrl/paths`、`types/typeRoots`、`moduleResolution` 的行为差异？  
-14) 声明合并（接口/命名空间/模块增强）适用场景与风险点有哪些？  
-15) `satisfies` 与 `as const` 各自语义是什么？如何“既校验形状又保留宽类型推断”？  
-16) 装饰器现状（实验/提案）与 `emitDecoratorMetadata` 的成本/收益如何权衡？  
-17) `readonly` 在属性、数组、元组中的行为如何？不可变模式如何建模？  
-18) 变长元组与参数列表类型：`...`、`Concat`、`Tail/Head`、`Tuple → Union` 的实现思路？  
-19) 分布式条件类型的“自动分配”陷阱如何避免（`[T] extends [U]` 技巧）？  
-20) DOM 类型与 `lib` 选择如何影响全局类型？多目标（Node/浏览器）项目怎么配置？  
-21) `declare` / `.d.ts`：如何为 JS/第三方库编写/补充类型声明？  
-22) `enum` vs `const enum` vs 字面量联合的编译输出差异与可维护性取舍？  
-23) 类/接口在混入模式与多实现中的写法？抽象类与装饰器如何结合？  
-24) 用户自定义类型守卫（Type Guard）如何编写与测试？局限点在哪？  
-25) Error 的类型安全：`unknown` 错误如何处理？`instanceof` 的跨 realm 问题怎么解？  
-26) `tsconfig` 严格模式族（`strictNullChecks` 等）对代码质量与迁移成本的影响？  
-27) 项目引用（Project References）如何提升 Monorepo 的构建/发布效率？  
-28) 声明文件生成（`.d.ts`）与 `declarationMap` 在库发布中的最佳实践？  
-29) 与 React/Vue 集成：JSX/Props/Emit/Slot 如何进行高级类型建模？  
-30) 类型 ↔ 运行时校验：zod/valibot/io-ts 与 JSON Schema 互转的思路与边界？  
-31) 键重映射 + 模板字面量：如何从 `getX` 自动生成 `setX`/事件名等 API？  
-32) 模式匹配类型（`infer` + 递归）：如何提取路由参数、Promise 内部类型、事件负载？  
-33) 类型计算的性能瓶颈如何诊断与治理（类型层“爆炸”问题）？  
-34) `export type` 与类型擦除（erasure）：如何划清“类型系统 vs 运行时”的边界？  
-35) 面对 JS 新提案（装饰器、记录/元组、TypedArray 等），TS 的类型策略与迁移注意点？
+1) TypeScript 的“结构类型系统”如何决定两个对象类型的兼容性？与“名义类型”有何不同，哪些场景会导致“意外兼容”？  
+2) `any / unknown / never` 的语义边界分别是什么？在项目中如何限制 `any` 的扩散并合理使用 `unknown`？  
+3) 类型推断与字面量收缩：为什么 `const x = 'a'` 与 `let x = 'a'` 推断不同？`as const` 会带来哪些连锁影响？  
+4) 联合类型与交叉类型在可空性/可选属性上的行为差异？`strictNullChecks` 对联合类型的可用性有什么改变？  
+5) 类型收窄（控制流分析）如何工作？请对比 `typeof / instanceof / in / 判空` 与“可辨识联合（discriminated union）”的配合方式与局限。  
+6) 如何编写**用户自定义类型守卫**（`x is T`）？在哪些情形会失效（跨函数边界、异步场景、闭包逃逸）？  
+7) 函数类型：参数是否“逆变”？`strictFunctionTypes` 打开/关闭的行为差异及对回调类型（如事件处理器）的影响。  
+8) `interface` 与 `type` 的能力差异与取舍？声明合并、递归类型、计算属性各在哪类问题更合适？  
+9) 索引类型体系：`keyof / T[K] / 映射类型` 的组合用法；如何用 `as` 做**键重映射**（重命名/过滤键）？  
+10) 常用工具类型的原理：`Partial / Required / Readonly / Pick / Omit / Record / NonNullable / ReturnType / Parameters / InstanceType` 可分别如何用条件/映射类型实现？
+11) 泛型参数设计：约束（`extends`）、默认参数、`keyof T` 约束链；如何避免“过度泛型化”导致的可读性下降？  
+12) 分布式条件类型与 `infer`：实现 `Awaited / ReturnType / Parameters` 的关键技巧；哪些写法会触发“分布式”？  
+13) 模板字面量类型：如何将 `'getName' | 'getAge'` 生成 `'setName' | 'setAge'`？如何用模板类型建模“路由/路径”字符串？  
+14) 变长元组/参数列表类型：如何实现 `Head / Tail / Concat / TupleToUnion`？变长参数在重载与推断中的坑点有哪些？  
+15) `satisfies` 与 `as const` 的差异：如何**既校验对象字面量形状**又**保留更宽的变量类型**（避免推断“太窄”）？  
+16) `readonly` 在属性、数组、元组中的行为；如何实现浅/深只读（`DeepReadonly`）并讨论其局限（如函数类型）？  
+17) 枚举对比：`enum / const enum / 字面量联合` 的编译产物与运行时特征；何时应避免 `const enum`？  
+18) 模块解析与别名：`baseUrl / paths / typeRoots / types / moduleResolution (node|bundler)` 的差异；对 Vite/webpack/ts-node 的联动影响？  
+19) DOM/Node 多目标工程：如何通过 `lib`、多 `tsconfig` 与条件导出同时支持浏览器与 Node，避免全局类型冲突？  
+20) 函数重载 vs 联合/泛型：三者的表达力与可维护性对比；实现签名与重载签名的分离规则有哪些坑？
+21) 协变/逆变/双向协变：为何 TS 在回调上采用“参数双向协变（bivariance）”的历史兼容策略？如何在关键边界强制逆变安全？  
+22) “名义性”建模：如何用**品牌/不透明类型（branded/opaque）**防止 ID 混用？给出可跨包扩展的品牌方案。  
+23) 避免“分布式条件陷阱”：为什么 `T extends U ? X : Y` 会自动分发？何时用 `[T] extends [U]` 抑制分发以获得期望结果？  
+24) 高级工具类型实现题：`DeepPartial / DeepRequired / Merge / Mutable / UnionToIntersection / InclusiveKeys` 的实现与边界讨论。  
+25) 键重映射 + 模板类型：根据接口 `{ getUser():User; getPost():Post }` 自动生成 `setUser / setPost` 的 API 类型与实现约束。  
+26) 错误类型安全：`unknown` 错误如何处理？`instanceof` 在跨 realm 下为何失效？如何在 API 边界建模 `Result<E, A>`？  
+27) 声明增强与全局污染：何时需要**模块增强/全局声明合并**（为第三方库补类型）？如何避免“污染式增强”失控？  
+28) 装饰器生态：TC39 新装饰器 vs TS 旧实验装饰器的语义差异；`emitDecoratorMetadata` 的体积/反射风险与收益评估。  
+29) 项目引用（Project References）：如何拆分大型仓库、加速增量构建与发布？`composite / declarationMap` 的正确配置与常见踩坑。  
+30) 类型性能治理：如何定位“类型层爆炸”（深递归、复杂分布式条件）？`--diagnostics`、简化工具类型、边界断开（`any` 隔离法）等手段的取舍。
+31) `.d.ts` 与声明发布：如何为 JS 包/第三方库编写/补充类型，组织 `typesVersions` 与 `exports` 以兼容 ESM/CJS？  
+32) 类型 ↔ 运行时校验：如何将 zod/valibot/io-ts 与 TS 类型连接（`z.infer`），并讨论从 TS 生成 JSON Schema 的可行/不可行边界？  
+33) React/Vue 高级建模：在 React 中对 Props、受控组件、`forwardRef`/`memo` 做精确类型；在 Vue 中为 `defineProps/defineEmits/slots` 建模并推断 `v-model`。  
+34) 面向库作者的 `declaration / declarationMap / sourceMap` 策略：如何让下游获得精准跳转与调试体验，同时控制包体与隐私泄露？  
+35) 面向未来的类型策略：装饰器落地、Records & Tuples、TypedArray 扩展、ESM 解析策略变更等新特性到来时，如何设计**可回退**的类型与发布方案？
 
 ---
 
 # 2D + 3D 图形渲染高频面试题（共 35 题）
 
-1) Canvas 2D / SVG / WebGL / WebGPU 各自的编程模型与适用边界如何选型？  
-2) 坐标系与像素密度（DPR）：缩放、Retina 与逻辑像素/物理像素如何影响绘制质量？  
-3) 2D/3D 变换矩阵：平移/旋转/缩放与齐次坐标；矩阵乘法顺序如何影响结果？  
-4) 栅格化与抗锯齿：MSAA/FXAA/TAA 的差异及适用场景？  
-5) 渲染管线：顶点/片元着色器的职责是什么？WebGPU 的可编程阶段有何新能力？  
-6) 光照模型：Lambert/Phong/Blinn-Phong 与 PBR（基于物理的渲染）各自的优劣？  
-7) 阴影实现：Shadow Mapping/PCF/PCSS/CSM 的原理与性能权衡？  
-8) 前向渲染 vs 延迟渲染 vs Forward+ / Clustered 渲染的取舍？  
-9) 颜色管理：sRGB vs Linear、HDR 与 Tone Mapping；Gamma 校正为何重要？  
-10) 深度/模板缓冲如何工作？Z-fighting 的常见原因与缓解办法？  
-11) 混合（Blending）与预乘 Alpha 的数学与实际工程注意事项？  
-12) 纹理采样：mipmap、min/mag/anisotropic 过滤与纹理坐标越界处理？  
-13) 材质系统与 BRDF：金属/非金属、粗糙度、环境反射（IBL）如何实现？  
-14) 实例化与批渲染：UBO/SSBO/顶点压缩如何降低 CPU→GPU 往返成本？  
-15) 粒子系统：发射器、受力/加速度、GPU 粒子的实现与排序问题？  
-16) 后处理：Bloom、Vignette、SSAO/SSR、Motion Blur 的核心思路与顺序安排？  
-17) 相机模型：透视/正交、视椎体裁剪、Jitter 抖动与稳定渲染的关系？  
-18) 贴图技术：法线/视差/位移贴图、环境/立方体贴图、三平面投影的适用场景？  
-19) 资源与格式：glTF/Draco 压缩、KTX2/BasisU 纹理压缩的管线如何搭建？  
-20) 骨骼蒙皮与 Morph 目标：动画混合/重定向如何在引擎中落地？  
-21) 物理与碰撞：Ammo/Cannon/Oimo/Box2D 的差异；刚体/软体/关节如何抽象？  
-22) 拾取（Picking）：颜色编码/射线投射（Raycasting）/BVH 加速的优缺点？  
-23) 2D 路径与布尔运算：填充规则（even-odd）、线段连接与自交处理？  
-24) 字体渲染：SDF/MSDF 字体原理；国际化排版（shaping/换行）如何处理？  
-25) 图像处理：卷积核（边缘检测/模糊/锐化）、WebGPU 计算/多通写法？  
-26) 瓦片化与大图分片渲染：地图/海量点渲染的层级与裁剪策略？  
-27) 离屏渲染：`OffscreenCanvas`、FBO、多目标渲染（MRT）在性能上的价值？  
-28) 时间步长与帧同步：固定/可变时间步、VSync、插值/外推的利弊？  
-29) 场景管理：Octree/Quadtree/BVH/LOD 如何降低渲染与碰撞成本？  
-30) 引擎选型：Three.js/Babylon.js/PlayCanvas（或自研）在架构/生态/可扩展性上的差异？  
-31) WebGL1 vs WebGL2 vs WebGPU：特性差异、迁移路径与兼容策略？  
-32) 移动端限制：带宽/填充率/过度绘制管理；Tiling GPU 的特殊优化？  
-33) 透明与渲染顺序：排序、双通道技术、深度预通道（Z-prepass）解决哪些问题？  
-34) 资源加载与生命周期：并发、解压、缓存、引用计数与内存上限治理？  
-35) 调试与分析：Spector.js、WebGPU 捕获、GPU 时间戳与火焰图如何定位瓶颈？
+1) Canvas 2D 的渲染模型与命令式绘制栈：路径、状态栈（save/restore）、合成（globalCompositeOperation）的原理与适用场景？  
+2) 高分屏与像素密度（DPR）：Canvas 逻辑尺寸 vs CSS 尺寸如何标定；像素对齐、Retina 适配与文字/位图清晰度治理？  
+3) Canvas 2D 文本与位图：imageSmoothingQuality、drawImage 子矩形/九宫格裁切、getImageData/putImageData 的性能与使用边界？  
+4) Canvas 2D 图层与重绘：脏矩形（dirty rect）策略、离屏缓冲（临时 canvas）与合成顺序如何降低重绘成本？  
+5) OffscreenCanvas + Worker：把 2D/WebGL 渲染移出主线程的通信、事件回传与降级策略？  
+6) WebGL 最小渲染闭环：上下文创建、缓冲（VBO/IBO）、着色器编译/链接、attribute/uniform 绑定与一次 draw 的流水线原理？  
+7) WebGL1 vs WebGL2：VAO、Instancing、UBO、MRT、sRGB 的新增能力对工程实践的直接收益与迁移要点？  
+8) GLSL 基础与插值：顶点→片元 varyings 的插值规则、精度限定符、分支与循环对性能的影响？  
+9) 纹理采样原理：UV 坐标、wrap 模式、min/mag 策略、mipmap 与各级过滤（含各向异性）如何选择？  
+10) 深度测试与背面剔除：zNear/zFar 对精度的影响、Z-fighting 成因与缓解（polygonOffset/反向 Z/调近远裁剪面）？  
+11) 透明度与混合：混合方程（src/dst factor）、预乘 Alpha 的数学与“白边/暗边”问题如何从素材与代码两侧修复？  
+12) 帧缓冲对象（FBO）：离屏渲染、MRT 与后处理链（FXAA、Bloom、色调映射）的基本搭建与性能考量？  
+13) 相机与投影：透视/正交矩阵的推导、视椎体裁剪、抖动（TAA/Jitter）与稳定渲染的关系与实现要点？  
+14) 光照模型入门：Lambert/Phong/Blinn-Phong 到 PBR（金属度/粗糙度）在实时渲染中的近似与取舍？  
+15) 阴影基础：Shadow Mapping 的深度图生成、PCF/PCSS 的软阴影思路、阴影失真/彼得潘效应与 bias 调参方法？  
+16) Three.js 场景图：Object3D 的本地/世界矩阵更新、层次合并与 frustumCulling 的执行时机与代价？  
+17) Three.js 材质体系：MeshBasic/Lambert/Phong/Standard/Physical 的光照参与度差异；PBR 纹理通道与颜色空间设置（sRGB/Linear）？  
+18) Three.js 几何与 BufferGeometry：attributes/index/tangent 的含义与生成；合并几何/压缩（Draco）在何处介入？  
+19) Three.js 纹理加载与缓存：TextureLoader/KTX2Loader/CompressedTexture；色彩空间、flipY、各平台采样差异与踩坑？  
+20) Three.js 阴影与灯光：Directional/Point/Spot 阴影贴图的开销；shadow.mapSize、bias、normalBias 的调优策略？  
+21) Three.js 动画系统：AnimationClip/KeyframeTrack/AnimationMixer 的职责划分；动画混合/过渡与 root motion 的处理？  
+22) Three.js 拾取：Raycaster 的射线与坐标系转换、实例化网格（InstancedMesh）拾取与自定义 id/颜色编码的两套方案？  
+23) Three.js 后处理：EffectComposer/RenderPass/ShaderPass 的数据流；自定义 Pass 的输入/输出约定与多分辨率渲染？  
+24) Three.js 性能工程：draw call 控制（合批/Instancing）、材质/状态切换排序、顶点数 vs 填充率 vs 过度绘制的权衡？  
+25) Three.js 透明与排序：renderOrder、depthTest/depthWrite、双通道（opaque+transparent）与半透明对象的常见故障排查？  
+26) glTF 2.0 资产管线：节点/蒙皮/动画/相机的表达；Draco 网格压缩与 KTX2/Basis 纹理压缩的打包与运行时解码流程？  
+27) 骨骼蒙皮与 Morph Targets：着色器层的变换公式、权重混合与动画重定向（retargeting）的核心步骤？  
+28) 资源生命周期治理：并发加载/解压、缓存与引用计数、纹理/几何/材质 dispose、GPU 内存估算与泄漏定位？  
+29) 交互事件映射：Canvas 指针事件到 3D 对象交互（hover/select/drag）的射线与坐标变换；pointer capture 的使用边界？  
+30) 多视口与 UI 叠加：setViewport/setScissor 的裁剪；在同一画布绘制小地图/PIP/后备缓冲叠加 UI 的实践？  
+31) 移动端优化：Tiling GPU 的带宽与填充率约束、分辨率缩放（动态 DPR）、AA 选型（MSAA/FXAA）与降帧策略？  
+32) WebGL 兼容与扩展：能力查询与降级（OES_element_index_uint、EXT_color_buffer_float、ANGLE_instanced_arrays）？  
+33) 大规模点云/线框与体素：Points/LineSegments 的着色器实现、屏幕空间线条（meshline）与 BVH 加速的基本思路？  
+34) 颜色管理与 HDR：three.js 的 outputColorSpace、toneMapping/exposure，线性工作流的重要性与测试校准方法？  
+35) WebGPU 入门与迁移：可编程渲染/计算 Pass、WGSL 着色器、资源绑定（bind groups）与从 Three.js/WebGL 迁移的桥接策略与现状？
 
 ---
-# Electron 高频面试题清单（35 题）
+# Electron 高频面试题（35 题）
 
-1) 进程架构：**Main / Renderer / Preload** 各自职责？与旧 **Bridge** 通信模型的关系是什么？  
-2) 安全基线清单：`contextIsolation`、`sandbox`、`nodeIntegration`、CSP 等应该如何组合与取舍？  
-3) **IPC 安全**：`ipcRenderer.invoke/handle` 与 `send/on` 的差异？如何做参数校验、最小暴露与防注入？  
-4) Preload 脚本的职责边界：`contextBridge.exposeInMainWorld` 暴露 API 的最佳实践与生命周期管理？  
-5) 渲染进程沙箱化：开启 `sandbox: true` 后常见能力缺失如何补齐？与 `nodeIntegration: false` 的区别？  
-6) 导航与外链安全：`will-navigate`、`setWindowOpenHandler`、`shell.openExternal` 的使用规范？如何防止任意跳转/钓鱼？  
-7) **BrowserWindow / BrowserView / WebContents** 的差异与选型？复杂多窗体应用如何组织层级与通信？  
-8) 自动更新体系：`electron-updater` vs Squirrel vs MAS 各自适用场景？**差分更新**与多通道灰度如何设计？  
-9) 代码签名与发布：macOS **notarization + hardened runtime**、Windows 证书与签名链配置要点？  
-10) 打包工具链：`electron-builder`、`electron-forge`、`electron-packager` 的能力对比与常见配置陷阱？  
-11) 资源与 ASAR：开启 asar 的优缺点？如何对敏感资源加固并处理运行时解压？  
-12) 性能治理：首窗白屏、热路径定位、`backgroundThrottling`、释放 WebContents/内存泄漏排查的套路？  
-13) GPU 与渲染：何时需要 `app.disableHardwareAcceleration()`？过度绘制/合成层问题如何诊断？  
-14) 桌面捕获：`desktopCapturer`/`getUserMedia` 获取屏幕/窗口时的权限与跨平台差异？  
-15) 系统托盘/菜单/任务栏：Tray、Dock、Jump List、Global Shortcut 的平台差异与冲突处理？  
-16) 通知体系：`new Notification` 与各平台本地通知中心差异？自定义按钮/交互的可行性与限制？  
-17) 电源与系统事件：`powerSaveBlocker`、`powerMonitor` 的使用场景与副作用？  
-18) 单实例/深链：`app.requestSingleInstanceLock` 与 `setAsDefaultProtocolClient` 如何实现 Deep Link 唤起？  
-19) 自定义协议与文件关联：`protocol.registerSchemesAsPrivileged` 的风险与标准/特权协议的权衡？  
-20) 文件系统与权限：`dialog.showOpenDialog`、`app.getPath`、沙箱/权限弹窗与目录穿越防护？  
-21) 数据持久化：SQLite/LevelDB/IndexedDB 的取舍？敏感数据如何用 **Keychain/DPAPI/keytar** 加密存储？  
-22) 崩溃与日志：Crashpad 集成、minidump 上报、符号表（dSYM/PDB）管理与隐私脱敏？  
-23) 调试与剖析：DevTools、性能面板、`--inspect`、Source Map、`contentTracing` 的正确打开方式？  
-24) 原生模块与 JSI/Node-API：如何编译/预构建跨平台二进制？Electron 版本与 Node ABI 的兼容策略？  
-25) 窗体形态：无边框/透明/毛玻璃（vibrancy）/置顶窗口的实现细节与输入命中区域（`-webkit-app-region: drag`）？  
-26) 打印与导出：`webContents.print`/`printToPDF` 的平台差异、分页/页眉页脚/背景图处理？  
-27) 剪贴板与拖放：`clipboard`、`nativeImage`、Drag & Drop 跨进程/跨应用的格式适配？  
-28) 可访问性（a11y）：屏幕阅读器兼容、语义树、快捷键冲突与系统高对比度模式支持？  
-29) 会话与网络：`session` 分区、Cookie/Cache 管理、代理设置、`webRequest` 拦截与证书校验（`setCertificateVerifyProc`）？  
-30) 生命周期与平台差异：`ready/activate/window-all-closed` 在 macOS/Windows 的行为差异与菜单焦点坑点？  
-31) CI/CD：多平台交叉构建、Apple Silicon/Universal 二进制、签名/公证自动化与密钥保护？  
-32) 测试策略：Spectron 退场后的替代方案（Playwright/Chromedriver 驱动）与端到端测试稳定性建设？  
-33) Web 安全策略：`allowRunningInsecureContent`、`webSecurity`、CSP、`trustedTypes` 等在桌面端的适配与边界？  
-34) 权限与合规：摄像头/麦克风/屏幕录制权限提示、MAS 沙箱 Entitlements、隐私条款与崩溃/埋点合规？  
-35) 迁移与升级：Electron 大版本升级的断点（Chrome/Node/ABI 变化）、Remote 模块移除的替代方案与回滚策略？
+1) 进程模型总览：Main / Renderer / Preload 的职责边界与生命周期（`app.ready`、`dom-ready`、`did-finish-load`）分别是什么？  
+2) `BrowserWindow` 启动链路：`webPreferences` 中 `contextIsolation/sandbox/nodeIntegration` 的含义与默认值变化史？  
+3) IPC 原理：`ipcRenderer.send/on` vs `ipcRenderer.invoke/handle` vs `postMessage(MessagePortMain)` 的消息语义与背压/异常传递差异？  
+4) Preload 设计：`contextBridge.exposeInMainWorld` 的 API 面向稳定性（版本化、能力最小化）如何落地？如何清理事件/资源避免泄漏？  
+5) 基础安全基线：关闭 `nodeIntegration`、启用 `contextIsolation`、配置 CSP，默认应禁用哪些危险能力与协议？  
+6) 导航与外链安全：`will-navigate`、`setWindowOpenHandler`、`shell.openExternal` 的正确使用与“任意跳转/钓鱼”防护策略？  
+7) WebContents 行为学：导航、进程复用与站点隔离（Site Isolation）对多标签/多域页面的影响？  
+8) 多窗体架构：`BrowserWindow` / `BrowserView` / `<webview>` 的差异、嵌套层级与通信/资源回收策略怎么选？  
+9) 会话与网络：`session` 分区、Cookie/Cache 隔离、代理设置、`webRequest` 拦截与证书校验（`setCertificateVerifyProc`）原理？  
+10) 权限与合规：摄像头/麦克风/屏幕录制在 macOS/Windows/Linux 的权限模型与弹窗时机；如何最小化授权面？  
+11) 桌面捕获：`desktopCapturer` 与 `getUserMedia` 的差异、源选择 UI、系统音频捕获与平台限制有哪些？  
+12) 文件系统与对话框：`dialog.showOpenDialog`、`app.getPath`、沙箱/路径穿越防护与大文件（流式）读取方案？  
+13) 数据持久化：SQLite/LevelDB/IndexedDB 的选型，Renderer 与 Main 的数据读写边界、敏感数据的 Keychain/DPAPI/keytar 加固？  
+14) 性能基线：首窗白屏治理（预加载协议、Splash、懒加载）、`backgroundThrottling`、热路径与大对象泄漏定位套路？  
+15) GPU/合成：何时需要 `app.disableHardwareAcceleration()`？如何诊断过度绘制/合成层问题与 ANGLE 后端差异？  
+16) 内存与资源释放：WebContents 生命周期、窗口/视图销毁、`destroy` vs `close` 行为、`gc()` 与 DevTools Performance 配合排查？  
+17) 日志与崩溃：Crashpad 架构、`crashReporter.start`、minidump 上报与符号表（dSYM/PDB）管理、隐私脱敏的流程？  
+18) Tracing 与性能剖析：`contentTracing`、Chrome Tracing 时间轴/火焰图读取方法与典型瓶颈图谱？  
+19) 自动更新原理：`electron-updater` vs Squirrel vs MAS 的适用边界、差分更新/失败回滚/多通道灰度策略如何设计？  
+20) 代码签名与发布：macOS notarization + hardened runtime、Windows 代码签名链与证书选择、常见签名/公证失败原因与排查？  
+21) 打包工具链：`electron-builder` / `electron-forge` / `electron-packager` 的差异、常见配置（asar、多平台、nsis/dmg）与坑点？  
+22) ASAR 与资源治理：开启 asar 的优缺点、运行时解压策略、对热修复/差分更新/增量下载的影响？  
+23) 通知系统：`new Notification` 与各平台原生通知中心差异，交互按钮/深链返回的实现约束？  
+24) 托盘/菜单/任务栏：Tray、Dock、Jump List、Global Shortcut 的平台异同与快捷键冲突/焦点管理问题处理？  
+25) 深链与单实例：`app.requestSingleInstanceLock`、`setAsDefaultProtocolClient` 的实现细节与跨平台传参/激活窗口策略？  
+26) 自定义协议：`protocol.registerSchemesAsPrivileged` 风险评估，`registerFile/Buffer/Stream/HttpProtocol` 的取舍与 CSP 配置？  
+27) Web 安全策略进阶：`webSecurity`、`allowRunningInsecureContent`、`trustedTypes`、`contextIsolation` 组合在桌面端的边界？  
+28) 打印与 PDF：`webContents.print/printToPDF` 的分页/页眉页脚/背景图/精度控制差异，跨平台字体/版式稳定性？  
+29) 原生能力与 Node-API：C++ 模块编译、预构建二进制、Electron 版本与 Node ABI 对齐策略（prebuild/optionalDependencies）？  
+30) 多窗口数据同步：Main 为“数据总线”还是使用跨进程存储？广播/请求-响应/共享内存的权衡与一致性设计？  
+31) CI/CD 实战：多平台交叉构建、Apple Silicon/Universal 二进制、签名/公证自动化、密钥保管与缓存策略？  
+32) 大型应用架构：模块边界、权限分层（Preload API 白名单）、按域分层（内嵌三方页面隔离）与“安全默认关闭”的工程体系？  
+33) 可靠性工程：崩溃自愈（重启/会话恢复）、离线可用、主/渲异常隔离、监控指标（崩溃率/启动时延/内存峰值）与告警？  
+34) 升级与迁移：Electron 大版本断点（Chrome/Node/ABI）带来的兼容问题、Remote 模块移除的替代与回滚设计？  
+35) 端到端设计题：为“多窗体+自动更新+屏幕共享+企业代理”的跨平台 Electron 应用，给出从安全基线到发布/监控的完整技术方案与关键权衡点。
 
 ---
 
