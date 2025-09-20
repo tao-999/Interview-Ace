@@ -911,3 +911,335 @@ export default defineConfig({
 **安全**
 - CSP、SRI（子资源完整性）与 `X-Frame-Options`/`COOP/COEP`；  
 - 依赖审计（`pnpm audit`/`npm audit` + SCA），锁定版本并定期刷新。
+
+---
+
+# 35) 生产工程基线：Source Map、环境/密钥、性能护栏与灰度回滚
+
+**Source Map 策略**
+- 目标：便于**定位线上错误**，同时**不暴露源码**。
+- 做法：
+  - 构建产出 **hidden/external** sourcemap（包内不内联）；仅上传到错误平台（Sentry 等）。
+  - 以 **release 版本号 + commit hash** 作为唯一标识，配合符号表上传。
+  - 对第三方包生成 `vendor` map 以便反解。
+- Vite 示例：
+  ```ts
+  // vite.config.ts
+  export default { build: { sourcemap: true } } // external map
+  ```
+- Webpack 示例：
+  ```js
+  // webpack.prod.js
+  module.exports = { devtool: 'hidden-source-map' };
+  ```
+
+**环境与密钥**
+- 约束：任何**私密信息**（API key、令牌）不得进入前端包。
+- 做法：
+  - 公开变量走前缀（Vite 的 `VITE_*`）+ 构建时注入；**敏感变量只在后端**或边缘函数上读取。
+  - 对“需要签名”的场景使用**短期签名**（STS/STS-like）或代理。
+  - 统一 `.env` 规范与**环境矩阵**（dev/staging/prod），CI 通过密钥柜（Secrets Manager）下发。
+
+**性能护栏**
+- **体积预算**：对 `initial`/`async` chunk 设置阈值（gzip/br）并在 CI 拦截。
+  - Vite（Rollup）示例：使用 bundle 分析插件并自建脚本检查阈值。
+- **Web Vitals**：LCP/CLS/INP **在线采集** + 告警；对关键页面设置 SLO，并将“超过阈值的比例”作为发布门禁。
+- **图片/字体**：图像转码（AVIF/WebP）、`<link rel="preload">` 关键字体 + `font-display: swap`。
+- **缓存与 CDN**：静态资源 `immutable` + 文件名哈希；HTML `no-store`；多区域回源与健康检查。
+
+**灰度与回滚**
+- **灰度发布**（canary）：按用户/地域/流量百分比逐步放量；配合远端**特性开关**（Feature Flag）。
+- **快速回滚**：CDN 多版本共存，切换 `release` 指针即可；配合 sourcemap 和错误平台做到“版本→错误回溯→回滚”闭环。
+- **数据/配置分离**：把不确定的策略放到远端配置，允许线上**热修**而不用重发包。
+
+---
+
+# 36) Fiber 架构：关键字段与双缓冲树
+
+**核心对象：`FiberNode`**
+- 重要字段：  
+  - `tag`（节点类型：FunctionComponent/HostComponent 等）  
+  - `type`（具体组件/DOM 类型）  
+  - `key`（复用与重排依据）  
+  - `pendingProps` / `memoizedProps`（新/旧 props）  
+  - `memoizedState`（Hook 链表等状态）  
+  - `flags` / `subtreeFlags`（提交期需要执行的副作用位）  
+  - `lanes` / `childLanes`（优先级/待处理更新集合）  
+  - `return`/`child`/`sibling`（树结构）  
+  - `alternate`（指向另一棵树的对应节点）
+  
+**双缓冲树（current / workInProgress）**
+- **current**：正在屏幕上显示的那棵 Fiber 树。
+- **workInProgress（WIP）**：本次渲染要构建/对比的树；渲染完成后**整棵树指针切换**，实现原子替换。
+- 好处：可在并发模式下**中断/恢复**构建，不污染 current。
+
+**副作用收集**
+- 渲染阶段在每个 Fiber 节点上打 `flags`；提交阶段根据 `flags/subtreeFlags` 扫描执行（插入/更新/删除、布局/被动副作用等）。
+
+---
+
+# 37) 工作循环：`render` / `commit` 两阶段与关键函数
+
+**渲染阶段（可中断）**
+- 入口：`workLoopConcurrent`（并发）或 `workLoopSync`（同步）。
+- 主要函数：
+  - `beginWork(fiber)`：根据新输入（props/state/context）计算子树，返回下一个要处理的子节点。
+  - `completeWork(fiber)`：当前节点收尾（生成 Host 节点更新、收集副作用），回到兄弟或父节点。
+- 产出：一棵打好 `flags` 的 **WIP 树**。
+
+**提交阶段（不可中断）**
+- 分三小步：
+  1) **Before Mutation**：调用 `getSnapshotBeforeUpdate` 等。
+  2) **Mutation**：根据 `Placement/Update/Deletion` 修改真实宿主环境（DOM）。
+  3) **Layout**：`useLayoutEffect`/class 组件 `componentDidMount/Update`；随后调度 `useEffect`（被动）在微/宏任务后执行。
+- 结果：`current` ↔ `workInProgress` 交换；屏幕显示新 UI。
+
+---
+
+# 38) 优先级模型：Scheduler 与 Lanes
+
+**两层模型**
+1) **Scheduler 优先级**：调度任务粒度（立即、用户、延迟等），决定**何时**切片执行。
+2) **Lane（车道）**：渲染优先级与合并规则，决定**先渲染谁**、哪些更新可以批处理。
+
+**常见映射**
+- **离散事件**（点击、键盘）：高优先 lane（尽快响应）。
+- **连续事件**（滚动、拖动）：次高优先。
+- **Transition**（`startTransition` 标记的非紧急更新）：较低优先，允许让路。
+- **Idle**：最低优先，空闲再处理。
+
+**合并与饥饿**
+- 同一 Fiber 的多次更新会合并到其 `lanes`；渲染会选择**最高优先的 lane 集**处理，避免低优更新饿死会通过**老化**策略提升优先级。
+
+---
+
+# 39) 更新队列：函数组件 Hook vs 类组件
+
+**函数组件（Hook）**
+- 每个 FunctionComponent Fiber 在 `memoizedState` 上维护一条**Hook 链表**。
+- `useState`/`useReducer` 有各自的**更新环形队列**：保存 `action`（或 reducer + payload）。
+- 渲染时从 `baseState + baseQueue` 依次计算新 state；并将**未消费的更新**串回新队列，保证在中断/恢复后不丢失。
+- **eager state**：在触发更新时尝试用上次 reducer/状态直接计算新值，若**不变**可**短路**跳过调度。
+
+**类组件**
+- `setState` 维护**链式更新**（可能是函数或部分状态对象），渲染时依次 reduce；`this.state` 只在渲染计算后更新。
+- 合并策略与批处理由调度层统一处理。
+
+**要点**
+- 并发下**同一更新可能被计算多次**（重做），因此 reducer/更新函数必须**纯**且可重入。
+
+---
+
+# 40) Hook 原理：Dispatcher 与“同序调用”规则
+
+**为什么 Hook 要“顶层调用、同序执行”**
+- 运行时通过一个**指针**（current Hook）在 Fiber 上的 Hook 链表中**按顺序**取值/写值。
+- 如果在条件/循环内调用，会导致**调用序列改变**，与上次渲染的 Hook 链表**对不上**，状态错位。
+
+**Dispatcher 机制**
+- 渲染开始时设置当前 `Dispatcher`（mount 或 update 版本）：
+  - `mountState`/`updateState`、`mountEffect`/`updateEffect` … 成对实现。
+- 每次调用 `useXxx` 都会**创建/读取**对应的 Hook 节点，移动指针到下一个。
+
+**副作用分类**
+- `useLayoutEffect`：提交阶段 **layout** 步骤同步执行（阻塞绘制后、浏览器绘制前）。
+- `useEffect`：**被动**，在 commit 结束后调度执行（不阻塞首帧）。
+
+---
+
+# 41) Context 传播：依赖跟踪与选择性更新
+
+**读取与订阅**
+- `useContext(MyContext)` 在渲染时对当前 Fiber 记录“我依赖了 `MyContext` 的值”，相当于订阅。
+- 当 `Provider` 的 `value` 变更时，React 根据订阅关系**标记**受影响的子树需要更新。
+
+**为什么 Context 容易“全树重渲染”**
+- Provider 下**所有消费方**默认会重渲染；如果 `value` 引用频繁变、或包含大对象，很容易放大重渲染面。
+
+**缓解策略（源码视角的友好用法）**
+- 保持 `value` 的**稳定引用**（`useMemo`）。
+- 拆分多个 Provider，按域提供（主题/权限/用户信息分开）。
+- 对热点数据**不要强行用 Context**，而是改用外部 store（`useSyncExternalStore` 模式或 Zustand/Redux），由 store 做**选择性订阅**。
+
+---
+
+# 42) 子节点 Diff（Reconciliation）：`key` 的作用与策略
+
+**规则速览**
+- **同类型 + 同 key** → 复用节点（更新 props）。
+- **同类型 + 不同 key** 或 **不同类型** → 视作新节点（卸载旧、挂载新）。
+- 列表更新采用**单次线性**算法：先按位置对比，必要时构建 key→旧节点的映射以支持**移动**。
+
+**实践要点**
+- **稳定 key** 来自业务 id；不要使用索引，尤其是**可增删/重排**的列表。
+- 分页/虚拟滚动场景，key 应该是**数据 id**，而非“可见区行号”。
+
+**拖拽示例（保持 key 稳定，只变顺序）**
+```tsx
+{items.map(item => (
+  <Row key={item.id} data={item} />
+))}
+// onDragEnd: setItems(reorder(items, srcId, dstId));
+```
+
+---
+
+# 43) Flags 与副作用：收集与提交
+
+**`flags` / `subtreeFlags`**
+- 每个 Fiber 在渲染阶段根据变化打上标志位：  
+  - **Mutation** 类：`Placement`（插入）、`Update`（属性变更）、`Deletion`（删除）。  
+  - **Passive**：`useEffect` 依赖变更/清理。  
+  - **Ref**：`Ref` 附着/变更。  
+- 父节点 `subtreeFlags` 聚合子树标志，提交阶段以此**剪枝扫描**（相较早期 Effect List 方案）。
+
+**提交阶段顺序**
+1) **Before Mutation**：快照（`getSnapshotBeforeUpdate`）。  
+2) **Mutation**：根据 `Placement/Update/Deletion` 操作宿主环境（DOM）。  
+3) **Layout**：`useLayoutEffect`/类组件布局副作用；随后调度 **Passive** 效果在微/宏任务中执行（不阻塞绘制）。
+
+**关键差异**
+- `useLayoutEffect` 同步、可读取布局并立即写回；  
+- `useEffect` 异步、不会阻塞绘制，更适合订阅/日志/网络等非布局副作用。
+
+**排错建议**
+- 如果出现“闪烁/抖动”，检查是否误用 `useLayoutEffect` 或在 layout 阶段做了昂贵计算。
+- 使用 Profiler/开发者工具查看**为什么渲染**与 Fiber flags，定位多余的 `Update/Placement`。
+
+```tsx
+// 典型错误：在渲染期间创建不稳定的回调/对象，导致子树每次都是 Update
+const handle = () => doSomething(); // ❌ 每次渲染新引用
+const handle = useCallback(() => doSomething(), []); // ✅ 保持引用稳定
+```
+---
+
+# 44) Suspense 实现原理：thenable、挂起与重试、fallback/reveal-order
+
+**挂起（suspend）如何发生？**  
+- 在渲染阶段，当组件**读取尚未就绪的数据**（RSC `use()` / 客户端 `use(promise)` / 第三方库以“抛出 thenable”协议暴露）时，组件会**抛出一个 thenable**。  
+- 最近的 Suspense 边界捕获该 thenable，把它登记到“**wakeables**”列表，并**订阅其完成**（`then(ping)`）。
+
+**fallback 的展示与避免闪烁**  
+- 若边界下的子树挂起且没有可复用的旧 UI，边界渲染 `fallback`。  
+- 在 **transition** 场景（`startTransition` 包裹）下，React 会**尽量保留上一次的已完成 UI**（即“粘住旧界面”），避免立即显示 fallback 闪烁，待数据就绪再无缝切换。
+
+**重试与揭示（reveal）**  
+- thenable 解决后触发 **ping**，调度对应 lane 的**重试渲染**；边界重新渲染成功即“揭示”真实 UI。  
+- `SuspenseList` 提供 **reveal-order**（`together/forwards/backwards`）控制多边界揭示顺序，兼顾感知速度与布局稳定。
+
+**SSR/Streaming 协作**  
+- 流式 SSR：服务器先输出外层 shell 与 fallback，数据就绪的边界以**分块**持续写出；客户端**选择性水合**逐步接管。  
+- 错误与加载要分离：加载去 Suspense，异常交给 **Error Boundary**。
+
+---
+
+# 45) 并发渲染中的中断与恢复：让路、丢弃与可重入
+
+**为什么能中断？**  
+- 渲染阶段是**可分段的**，React 在 `workLoopConcurrent` 中周期性调用 `shouldYield()`（由 Scheduler 决定），以让出主线程给更高优先任务（输入/动画）。
+
+**中断后的恢复**  
+- 若无更高优先任务，仅是时间片用尽，会在下一个时间片**继续从上次的 Fiber** 处恢复。  
+- 若有**更高优先 lane** 插入（例如点击事件），当前 WIP 可能被**丢弃重做**，以高优先任务为先。  
+- 为保证正确性，**render 必须纯且可重入**：同一次更新可能被计算多次。
+
+**实践要点**  
+- **不要**在 render 阶段读取/写入外部可变单例（如全局缓存可被并发读写）；必要时把读取推迟到 `useEffect`。  
+- 需要抢占式体验的更新放进 `startTransition`，输入响应保持同步优先。  
+- 尽量使用 **不可变数据 + 纯函数**，减少中断后的重复工作量。
+
+---
+
+# 46) `useTransition` / `useDeferredValue` 的内部语义与差异
+
+**`useTransition()`**  
+- `startTransition(fn)` 将 `fn` 中的更新**标记为 transition lanes**（低于离散/连续事件的优先级）。  
+- 这类更新允许**被打断与延后**，React 会尽量**保留上次已完成的 UI**，直到新 UI 完成再无缝切换。  
+- `isPending` 来源于内部对**仍在进行的 transition lanes**的跟踪：当这些 lanes 在根上清空后，`isPending` 才变为 `false`。
+
+**`useDeferredValue(value)`**  
+- 返回 `value` 的**延迟版本**：当上游 value 频繁变化时，下游以**较低优先**（通常也是 transition lanes）吸收变化，减少昂贵子树的抖动。  
+- 实现思路是 Hook 在比较当前 `value` 与上次“已提交的延迟值”后，必要时以较低优先**安排一次更新**，从而“滞后”消费。
+
+**对比**  
+- 作用点：`useTransition` 是**更新发起方**的语义；`useDeferredValue` 是**值消费方**的语义。  
+- 粒度：`useTransition` 可把**一组更新**降级；`useDeferredValue` 只影响**这一份值**的传递。  
+- 组合：输入端用 `startTransition`，展示端用 `useDeferredValue` 稳定昂贵子树，是常见双保险。
+
+---
+
+# 47) Hydration 算法：匹配、选择性水合与 mismatch 处理
+
+**匹配流程**  
+- `hydrateRoot(container, element)` 绑定到已有 SSR DOM。  
+- 渲染时，DOM 渲染器通过“**声明式匹配**”尝试把 Fiber 对齐到已有节点：  
+  - 元素类型/属性匹配 → 复用并打补丁；  
+  - 不匹配 → **切换为客户端渲染**该子树（丢弃该处服务端标记）。
+
+**选择性水合**  
+- React 在根容器上委托事件；当某个**离散事件**抵达未水合子树时，会**优先水合该边界**，保证交互不被阻塞。  
+- 流式 SSR 配合 Suspense：可先水合外层 shell，再按交互/数据就绪逐步水合内部。
+
+**mismatch 处理与规避**  
+- 典型原因：随机数/时间、环境差异、客户端专属逻辑。  
+- 规避：  
+  - 把仅客户端逻辑放到 `useEffect`；  
+  - 使用 `useId()` 保证一致 ID；  
+  - 对少量可控差异使用 `suppressHydrationWarning`（谨慎）。  
+- 一旦 mismatch，React 会在该处放弃复用，转为**客户端重新创建**节点，代价是多一次 DOM 变更与可能的闪烁。
+
+---
+
+# 48) 事件系统（React 17+）：根容器委托、事件优先级与合成事件边界
+
+**委托位置变化**  
+- 17 之前多委托在 `document`，17 起**委托在根容器**，便于多版本/多应用并存，Portal 行为更贴近原生。
+
+**事件优先级**  
+- React 为事件赋予**调度优先级**（离散 > 连续 > 默认），影响更新归入的 lanes，从而决定是否可被中断/让路。
+
+**合成事件与原生事件**  
+- 合成事件（`SyntheticEvent`）提供跨浏览器统一 API；17 起**不再事件池化**，异步访问属性安全。  
+- 某些事件（如 `scroll`）走原生监听，**不经过合成层**；`stopPropagation` 仅影响 React 树内传播。
+
+**工程影响**  
+- 与非 React 区域共存更安全（微前端/多根容器）。  
+- 高频场景建议使用被动监听或避免在事件中做重计算；将昂贵更新迁移到 **transition** 或异步工作。
+
+---
+
+# 49) RSC / Flight 协议：服务器组件负载与客户端拼装
+
+**核心模型**  
+- **Server Components**（不含事件/浏览器 API）在服务器执行，直接**靠近数据源取数**并输出 **Flight payload**（一种可序列化的组件树描述 + 模块引用）。  
+- 客户端 runtime 解码 payload，并在 **Client Components** 边界处**拼装与水合**，仅对需要交互的部分下发 JS。
+
+**优势**  
+- 显著减少**客户端 JS 体积与水合成本**；避免客户端“网络瀑布”，把聚合/拼接放在服务端完成。  
+- 与 **Server Actions**/缓存 配合，可实现端到端的数据一致与失效控制。
+
+**限制与约束**  
+- Server 组件不能使用浏览器 API/状态 Hook；只能向下传**可序列化的 props**。  
+- Client 组件需以 `'use client'` 显式声明，事件/状态在客户端处理。  
+- 需要框架级支持（如 Next.js 的 `react-server-dom-webpack` 管线）。
+
+---
+
+# 50) 渲染器 Host Config：复用调和器的“平台适配层”
+
+**调和器与渲染器分层**  
+- React **Reconciler** 负责构建/对比 Fiber 树与调度；具体“如何操作宿主环境”由各渲染器的 **Host Config** 决定。  
+- DOM 渲染器（react-dom）、原生渲染器（react-native）等共享调和器，差异在于 Host Config 的实现。
+
+**Host Config 的关键接口（节选）**  
+- 创建/更新：`createInstance` / `finalizeInitialChildren` / `prepareUpdate` / `commitUpdate`  
+- 树操作：`appendChild` / `insertBefore` / `removeChild`  
+- 文本节点：`createTextInstance` / `commitTextUpdate`  
+- 效果支持：`supportsMutation` / `supportsPersistence` / `now` / `scheduleTimeout` …
+
+**工程意义**  
+- 新平台（Canvas/WebGPU/终端 UI）可通过实现 Host Config 得到 React 的**调和 + 并发能力**。  
+- 需保证这些接口是**幂等、可重入**的，以适配并发渲染与中断/恢复；并正确处理**布局/测量**时机，避免闪烁与抖动。
+
+```
+::contentReference[oaicite:0]{index=0}
