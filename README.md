@@ -81,6 +81,21 @@
 33) 媒体组件的“受控 vs 非受控”设计；`forwardRef` / `useImperativeHandle` 的场景？  
 34) 构建与工具链（**Vite**）：别名/环境变量、按路由分包与产物分析基线？  
 35) 生产工程基线：Source Map、环境/密钥、性能护栏与灰度回滚策略？
+36) **Fiber 架构**：FiberNode 的关键字段（`tag/flags/lanes/alternate`）与双缓冲树（current/workInProgress）如何协作？  
+37) **工作循环**：`render` 与 `commit` 两阶段的源码路径；`beginWork` / `completeWork` 分别负责什么？  
+38) **优先级模型**：Scheduler 优先级与 **Lane 模型**如何映射？离散/连续事件与 `transition` 分别落在哪些 lanes？  
+39) **更新队列**：函数组件 Hook 的更新链表（baseState/baseQueue）与类组件 `setState` 队列的差异？`eager state` 何时触发？  
+40) **Hook 原理**：Dispatcher 如何保证“同序调用”？为什么 Hook 不能放在条件/循环里？`mountXxx/updateXxx` 成对实现的意义？  
+41) **Context 传播**：Provider→Consumer 的依赖追踪与变更广播；源码如何做选择性订阅以降低重渲染？  
+42) **子节点 Diff（Reconciliation）**：首渲染 vs 更新阶段策略；`key` 如何决定复用/移动/删除？  
+43) **Flags 与副作用**：`Placement/Update/Deletion/Passive` 等标志在 commit 期如何收集/执行？从 Effect List 到按 flags 扫描的演进？  
+44) **Suspense 实现**：`thenable`/`ping` 机制；挂起与重试的调度；`fallback` 与 `revealOrder` 在源码层如何落地？  
+45) **并发中断/恢复**：`workLoop` 如何让出控制？何时丢弃 WIP、回退到 current 并重来？  
+46) **`useTransition` / `useDeferredValue`**：内部如何标注“非紧急更新”？哪些路径会降级到 transition lanes？  
+47) **Hydration 算法**：SSR 标记与客户端 fiber 对齐；选择性/优先级水合如何避免阻塞首屏？mismatch 处理路径？  
+48) **事件系统（17+）**：根容器事件委托；离散/连续事件优先级；合成事件与原生事件在源码中的分层与逃逸边界？  
+49) **RSC / Flight 协议**：Server 组件产出的 wire format 如何在客户端重建并与 Client 边界拼接？  
+50) **渲染器 host config**：`appendChild/commitUpdate` 等 DOM 渲染器接口的职责；不同渲染器（DOM/Native/自定义）如何复用 reconciler？
 
 ---
 
