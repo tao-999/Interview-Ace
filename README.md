@@ -4,7 +4,7 @@
 
 ---
 
-# 前端 · 计算机网络高频面试题（35 题）
+# 前端 · 计算机网络高频面试题（50 题）
 
 1) **HTTP/1.1 vs HTTP/2 vs HTTP/3（QUIC）**：多路复用、头阻塞（HoLB）、优先级/流量控制与握手差异？  
 2) **TCP/UDP/QUIC**：连接建立（3/4 次握手、0-RTT/1-RTT）、丢包/拥塞控制、重传与对前端体验的影响？  
@@ -59,7 +59,7 @@
 
 ---
 
-## Flutter 高频面试题（35 题）
+## Flutter 高频面试题（60 题）
 
 1) Flutter 渲染管线从 **Widget → Element → RenderObject** 各层分别做什么？如何协同？  
 2) 约束-布局-绘制（**constraints/layout/paint**）完整流程是怎样的？`BoxConstraints` 如何影响子组件？  
@@ -96,7 +96,31 @@
 33) **Sliver** 体系与滚动性能：`CustomScrollView`、`SliverList/Grid/PersistentHeader` 的原理与场景？  
 34) 无障碍（**a11y**）与可达性：`Semantics` 树、`MergeSemantics`、TalkBack/VoiceOver 差异与测试？  
 35) 自定义与发布插件（Plugin）：**联邦式插件**结构、`MethodChannel` vs **FFI**、多平台兼容策略？
-
+36) **Impeller 深入**：与 Skia 的差异、着色器编译/缓存策略、SkSL 预热与消除 shader jank 的实践？  
+37) **Flutter Web 渲染后端**：CanvasKit vs HTML（与 Wasm 引擎）的取舍；性能/包体/可用性权衡与典型配置？  
+38) **文本与排版系统**：`Paragraph`/`TextPainter` 工作流、断行与双向文本（Bidi）/合字（ligature）/emoji 的处理边界？  
+39) **图片解码与内存治理**：`ImageCache` 策略、`painting.imageCache` 调优、`ui.instantiateImageCodec` 异步解码与大图 OOM 处理？  
+40) **自绘性能**：`CustomPainter`、`saveLayer`、`PictureRecorder` 对合成层与 raster cache 的影响；如何避免过度绘制？  
+41) **运行时着色器**：`FragmentProgram`/`ShaderMask`/`BackdropFilter` 的能力边界与跨平台一致性问题？  
+42) **Isolate 并行模型**：`Isolate.run`/`compute` 的适用场景、消息传递开销、`TransferableTypedData` 零拷贝与生命周期管理？  
+43) **FFI（dart:ffi）与原生性能**：结构体布局/对齐、回调、内存所有权；相比 `MethodChannel` 的延迟/吞吐差异？  
+44) **PlatformView 进阶**：Android `Hybrid Composition` vs `Virtual Display`/`Texture` 的渲染/输入差异；iOS UIView/UIViewController 容器化策略？  
+45) **手势系统深潜**：`GestureArena` 冲突裁决、自定义 `GestureRecognizer`、滚动与手势的竞争/要求失败（require-fail）场景？  
+46) **自定义 RenderObject**：`RenderBox`/`RenderSliver` 的布局协议、`hitTestChildren`、约束系统与可视区域裁剪？  
+47) **桌面平台工程化**：Windows/macOS/Linux 的窗口/菜单/托盘、多显示器 DPI、系统事件差异与插件适配？  
+48) **Web 与 JS 互操作**：`package:js`/`dart:js_interop` 的使用、CSP 限制、浏览器 API（如剪贴板/全屏）接入边界？  
+49) **稳定性与上报**：`FlutterError`/`PlatformDispatcher.onError`/`runZonedGuarded` 与原生崩溃（Crashpad/dSYM/PDB）串联、日志切片与脱敏？  
+50) **构建与混淆**：`--split-debug-info`、`--obfuscate`、符号文件管理与回溯；最小化包体与调试可追溯性的平衡？  
+51) **动画进阶**：物理动画（`Spring`/`Simulation`）、多控制器协同、`Ticker` 泄漏排查与 `TickerMode` 的节流作用？  
+52) **路由与深链**：Navigator 2.0 + `go_router` 的 URL 映射/守卫/恢复；多实例栈与外部唤起（app links/URL schemes）？  
+53) **进程死亡与状态恢复**：Android 后台被杀重建、iOS 内存压力退出后的恢复策略；与持久层/缓存的一致性设计？  
+54) **插件联邦化与发布**：多平台分仓/接口封装、版本矩阵 CI、breaking change 治理与迁移文档化？  
+55) **后台任务与平台协作**：iOS `BackgroundTasks`/`PushKit`、Android Foreground Service/WorkManager 与 Flutter 侧调度的坑点？  
+56) **音视频/设备能力**：相机/麦克风/蓝牙权限模型、帧处理与传输带宽；跨平台编码能力与降级策略？  
+57) **安全基线**：反调试/Root/Jailbreak 检测、证书锁定（pinning）、WebView JSBridge 安全与屏幕录制防护局限？  
+58) **高级国际化**：动态切换语言/区域、ICU 复数/性别规则、本地化数据热更新与时区统一？  
+59) **DevTools & 性能诊断**：Timeline/CPU/Memory Profiler、`flutter trace`、`PerformanceOverlay` 的使用路线与读数解读？  
+60) **分发与合规**：iOS TestFlight/审核要点、Android App Bundle/Play Integrity、桌面应用签名/公证/沙箱与自动更新？
 ---
 
 ##  React 高频面试题（50 题）
@@ -154,7 +178,7 @@
 
 ---
 
-# Vue 3 高频面试题清单（35 题）
+# Vue 3 高频面试题清单（50 题）
 
 1) Vue 3 的响应式系统（Proxy + effect + scheduler）是如何工作的？依赖收集与触发更新的流程？  
 2) `ref`、`reactive`、`shallowRef`、`shallowReactive`、`markRaw` 的适用场景与坑点对比？  
@@ -191,7 +215,21 @@
 33) 测试：Vue Test Utils + Vitest 的渲染/交互测试、`flushPromises`、mock 组合式函数与 Pinia store 的方法？  
 34) 构建与工程化：Vite 配置（别名/环境变量 `import.meta.env`）、按路由/组件分包、产物分析与体积预算？  
 35) 安全与可达性：`v-html` 的消毒与 XSS 预防、表单 label/aria-*、焦点管理在 Teleport/过渡场景中的要求？
-
+36) **Reactive Props Destructure（3.5）**：`defineProps()` 的**解构仍保持响应式**的机制与边界？与 `toRef/toRefs` 的取舍与迁移注意？  
+37) **`useTemplateRef()`（3.5）**：与 `ref="xxx"`/`template ref` 的差异、动态列表场景、类型推断与失效时机？  
+38) **`onWatcherCleanup()`（3.5）**：与 `watch` 清理回调的关系；取消网络请求/事件监听/动画的最佳范式？  
+39) **`<Teleport defer>`（3.5）**：目标容器延迟出现时的挂载时序、可达性（焦点/阅读顺序）与滚动锁协作？  
+40) **`useId()`（3.5）与 SSR 一致性**：ID 生成在 CSR/SSR 的一致性保障、对表单/无障碍/可复用组件的价值？  
+41) **受控差异抑制（3.5）**：`data-allow-mismatch` 的适用场景与风险；何时应该改为纯客户端逻辑？  
+42) **`defineModel()`（3.4）进阶**：多 `v-model`、修饰符类型化、父子组件双向绑定与受控/非受控切换策略？  
+43) **泛型组件（3.3+）**：`<script setup lang="ts">` 的泛型声明方式、`defineProps`/`withDefaults` 与 Volar 推断的坑位？  
+44) **`defineSlots()` 类型化**：作用域插槽的参数约束、联合/可选槽设计、编译器对错误用法的提示边界？  
+45) **渲染性能微优化**：`v-memo`/`v-once` 与 `shallowRef/markRaw` 的组合策略；何时值得用、何时过度优化？  
+46) **Effect 调度与刷新策略**：`watch` 的 `flush: 'pre'|'post'|'sync'` 取舍，如何避免布局抖动与多次无效计算？  
+47) **`effectScope` / `onScopeDispose`**：Composable 的资源域管理、嵌套作用域与跨组件清理的一致性设计？  
+48) **自定义渲染器**：基于 `@vue/runtime-core` 的 `createRenderer` 如何实现 Canvas/WebGL/终端渲染？VNode 与 Host Config 的职责边界？  
+49) **Web Components 集成**：`defineCustomElement` 的能力与限制；Shadow DOM/样式隔离/`::part`/`::slotted` 的协作与陷阱？  
+50) **SSR 与“选择性/延迟水合”**：在框架层（如 Nuxt）如何按交互/可见性/空闲时机水合？对 SEO 与可感知性能的影响？  
 ---
 # Svelte 高频面试题清单（35 题）
 
@@ -232,6 +270,61 @@
 35) 迁移与前沿：从 Svelte 3/4 迁移到 Svelte 5（Runes）的步骤、兼容层/宏开关、渐进迁移与团队训练成本评估？
 
 ---
+# 前端构建工具高频面试题（50 题）
+
+1) **Webpack 打包管线**：从入口解析、依赖图构建到产物生成的全过程？`loader` 与 `plugin` 的执行顺序与 Tapable Hooks 是怎样的？  
+2) **HMR 原理对比**：Webpack Dev Server / Vite / esbuild 的热更新实现差异？模块边界与状态保留如何处理？  
+3) **Tree-Shaking 生效条件**：只对 ESM？`sideEffects` 字段、`/*#__PURE__*/` 标注、类字段与动态属性的影响？  
+4) **代码分割策略**：`import()`、Webpack `SplitChunks`、Rollup/Vite `manualChunks` 的差异与“vendor 大包”隐患？  
+5) **长期缓存（Long-term Caching）**：`contenthash/chunkhash`、`runtimeChunk`、稳定 `moduleIds/chunkIds` 的配置与坑？  
+6) **Source Map 选择**：开发/生产常用类型（`eval-cheap-module-source-map`、`hidden-source-map` 等）与**安全/性能**权衡？  
+7) **模块解析规则**：别名（alias）、`extensions`、`mainFields`/`exports` 条件导出、`browser` 字段如何影响最终产物？  
+8) **CSS 处理链**：CSS Modules、PostCSS、Tailwind、`@layer` 与 **CSS Code Split** 在不同工具中的实现差异？  
+9) **静态资源管线**：Webpack Asset Modules vs 经典 `file/url-loader`；Vite 资源 URL、内联阈值与图片/字体指纹策略？  
+10) **环境变量与常量替换**：Webpack `DefinePlugin` vs Vite `import.meta.env`，如何借助 DCE（死代码消除）剔除分支？  
+11) **Vite 预构建（dep optimization）**：为什么用 esbuild 预打包？何时失效、如何诊断与强制重建？  
+12) **Vite 开发态架构**：原生 ESM + 即时转换链（Plugin hooks）+ 精准 HMR；与“先打包后服务”的范式区别？  
+13) **Rollup 作为库打包器**：`external`/`peerDependencies`、多格式输出（`esm/cjs/umd/iife`）与 Tree-Shaking 友好度？  
+14) **构建性能优化**：Webpack 持久化缓存、并行/多进程、esbuild/swc 辅助；冷启动与增量构建的瓶颈定位？  
+15) **Babel vs SWC vs esbuild**：转译与压缩能力差异、插件生态、与 TypeScript 的协作模式（仅转译 vs 类型检查分离）？  
+16) **TypeScript 策略**：`tsc --noEmit` 做类型检查，打包走 swc/esbuild；`projectReferences`/`paths` 与编译结果路径映射？  
+17) **图片与字体优化**：SVGO、imagemin/Squoosh 管线；KTX2/Basis 压缩纹理在 Web 的接入与构建支持？  
+18) **Monorepo 构建**：pnpm/yarn workspaces、Nx/Turborepo 的任务图与缓存；跨包别名/TS references 如何联动打包器？  
+19) **SSR/SSG/边缘渲染集成**：Vite SSR、Next（Turbopack/Webpack）、Nuxt（Vite/Rollup）如何区分 server/client 构建与同构注入？  
+20) **Workers/Worklets 打包**：`new Worker()`/`AudioWorklet`/`OffscreenCanvas` 的产物拆分、publicPath 与跨域限制？  
+21) **微前端方案**：Webpack Module Federation vs Import Maps/SystemJS 的差异、共享依赖与运行时冲突治理？  
+22) **CSP 与构建**：`nonce/hash` 内联脚本、去除 `eval`、`wasm-unsafe-eval` 限制下的 Source Map 与 HMR 适配？  
+23) **国际化分包**：语言包动态加载、按路由/区域懒加载策略与缓存键（`Accept-Language`/自定义 header）设计？  
+24) **兼容与 Polyfill 策略**：`browserslist`、core-js 注入、Vite `@vitejs/plugin-legacy` 的差异与代价？  
+25) **CSS Tree-Shaking 与 Critical CSS**：Purge/Content 提取误删风险、动态类名处理、首屏关键 CSS 抽取策略？  
+26) **产物分析与体积预算**：`webpack-bundle-analyzer` / `rollup-plugin-visualizer`；CI 中设定预算阈值与失败策略？  
+27) **预加载与优先级**：`<link rel="preload/prefetch">`、Priority Hints（`fetchpriority`）与打包分片的协同？  
+28) **多页面应用（MPA）构建**：多入口 HTML 生成、共享运行时代码的抽取、公共资源缓存与路由隔离？  
+29) **环境分层与配置管理**：Webpack `mode`/`webpack-merge`、Vite `.env.*` 与 `define`/`build.rollupOptions` 的协同？  
+30) **供应链与安全**：依赖锁定、SRI（子资源完整性）生成、`npm audit`/SCA、恶意包防护与 CI 里的签名验证？  
+31) **确定性构建**：records 文件、`deterministic` ids、哈希稳定性；如何避免“每次构建 chunk 名变动”？  
+32) **WASM 集成**：wasm-pack/`vite-plugin-wasm`；同步 vs 异步初始化、`COEP/COOP` 与跨源隔离要求？  
+33) **新一代打包器**：Rspack/Turbopack/Farm 的架构思路、与 Webpack/Vite 的兼容性与迁移考量？  
+34) **CI/CD 实践**：缓存 `node_modules`/`pnpm store`、Docker 层缓存、产物与 Source Map 上传、工件回滚策略？  
+35) **疑难构建排错**：循环依赖、CJS/ESM 互操作（`require` vs `import`）、`Cannot use import statement outside a module` 等典型问题的定位路径？
+36) **Parcel**：零配置管线如何工作？缓存与并行打包、内容感知（Auto Detect）和 HMR 的机制；与 Vite/Webpack 的取舍与典型落地场景？  
+37) **Turbopack**：增量图/按需编译的核心思路、与 Webpack 的兼容层现状；大体量项目迁移评估与“功能完备度 vs 性能”的权衡？  
+38) **Rspack / Farm**：Rust 系 bundler 的架构要点、Loader/Plugin 兼容策略、与 Webpack/Vite 的差异；迁移步骤与已知坑位？  
+39) **esbuild 插件与二开**：`onResolve/onLoad` 生命周期、namespace/虚拟模块、缓存键与并发安全；典型插件（别名、MD/CSV 读入）如何实现？  
+40) **Rollup/Vite 插件生命周期**：`resolveId/load/transform/generateBundle` 的职责边界；`this.emitFile` 对代码分割与资源指纹的影响？  
+41) **Webpack 插件（Tapable）**：`compiler`/`compilation`/`NormalModuleFactory` 关键钩子与 Asset Pipeline；如何在生成阶段安全地修改产物？  
+42) **持久化缓存与失效**：Webpack `cache`、Rspack/Vite 依赖预构建缓存的 key 组成（loader 版本、环境变量、查询串、文件 Hash）；定位“缓存未失效/错误命中”的步骤？  
+43) **Dev Server 代理与 HTTPS**：开发代理（WebSocket/HTTP/HTTP2）与 CORS 的交互、HMR 跨域；自签名证书/HTTP3 开发约束与常见报错定位？  
+44) **多目标产物**：面向 **Node/Edge/Browser** 的三套构建如何并行维护？`platform/target/conditions` 与 polyfill 策略（无 Node 内置、`fetch`/`webcrypto` 限制）？  
+45) **包导出策略**：`exports`/`imports`/`types`/`main`/`module` 的组合与 **Dual Package Hazard**；在 bundler 与 Node 下如何做一致性验证？  
+46) **库发布最佳实践**：多格式输出（ESM/CJS/IIFE/UMD）、`external`/`peerDependencies`、`sideEffects` 标注与 Tree-Shaking；如何给使用者保留 DCE 空间？  
+47) **CSS 工具链**：Lightning CSS vs PostCSS（Autoprefixer/CSSnano）；`@nest`/`@layer`/容器查询 等新特性的编译与兼容；何时用静态抽取（vanilla-extract/Linaria）？  
+48) **Source Map 全链路**：多阶段转换（TS→Babel/SWC→Minify）如何保持映射准确？`hidden-source-map` vs external vs inline 的取舍与隐私合规（sourcemap 只上传错误平台）？  
+49) **“无打包开发”与图失效**：Vite/Snowpack 的原生 ESM（dev 时不打包）对大仓 HMR 稳定性的影响；模块图失效/循环依赖导致的热更异常如何定位？  
+50) **Monorepo 编排与远程缓存**：Nx/Turborepo/Bazel 如何与 bundler 协作实现任务图与增量构建？缓存粒度、工件复用与 CI 下的跨平台缓存策略？  
+
+---
+
 # 前端架构高频面试题清单（35 题）
 
 1) **单体前端 vs 微前端**：在组织规模、发布独立性、跨团队协作下如何选型？各自的边界与代价是什么？  
@@ -315,7 +408,7 @@
 35) 性能与观测：Web Vitals（LCP/CLS/INP）采集、`PerformanceObserver`、Long Tasks 与交互延迟优化路线？
 
 ---
-# 大前端算法高频面试题清单（35 题）
+# 大前端算法高频面试题清单（50 题）
 
 1) 两数之和（哈希表）  
 2) 三数之和（排序 + 双指针，含去重）  
@@ -352,6 +445,21 @@
 33) Top K 高频元素（小顶堆 / 桶排序）  
 34) 位运算技巧：lowbit、异或求唯一数、快速幂取模  
 35) 随机算法：Fisher–Yates 洗牌 / 蓄水池抽样 / 打乱数组
+36) 最长递增子序列 LIS（贪心 + 二分，O(n log n)）  
+37) 字符串匹配三板斧：KMP / Z-Algorithm / Rabin–Karp（滚动哈希碰撞处理）  
+38) 会议室问题：最少会议室数 / 能否参加所有会议（扫描线 / 小顶堆）  
+39) 合并 K 个有序链表/数组（分治归并 / 小顶堆）  
+40) 数据流中位数 / 滑动中位数（双堆 + 延迟删除）  
+41) 两个有序数组的中位数（对数级二分，O(log(min(m,n)))）  
+42) 单词拆分（Word Break，DP + Trie/记忆化优化）  
+43) 单词接龙（Word Ladder，BFS / 双向 BFS）  
+44) 网格最短路径（可移除 K 个障碍，BFS 状态扩展：row,col,k）  
+45) 不同子序列个数（Distinct Subsequences，DP）  
+46) 最大子数组和 / 环形最大子数组和（Kadane + 前缀和技巧）  
+47) 零钱兑换 I/II：最少硬币数 / 组合数量（完全背包 DP）  
+48) 0/1 背包（容量约束下的最大价值，滚动数组优化）  
+49) Aho–Corasick 自动机（多模式匹配，失败指针 + Trie）  
+50) 线段树 / 树状数组（区间求和/最值的查询与单点/区间更新，对比差分/前缀和的适用边界）
 
 ---
 # React Native 高频面试题清单（35 题）
