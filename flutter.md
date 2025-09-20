@@ -1168,3 +1168,723 @@ my_plugin/
 - 错误用统一 `MyPluginException(code, message, details)`；  
 - 对高频调用提供**批量/流**接口，减少跨平台切换成本。
 
+---
+
+# 36) Impeller 深入：与 Skia 的差异、着色器编译/缓存、SkSL 预热与 shader jank 治理
+
+**差异与定位**
+- **Skia**：运行时将 shader 源（GLSL）编译为平台语言，首次触达路径易出现 **编译抖动**。
+- **Impeller**：构建期或安装期生成/打包着色器工件（Metal/Spir-V 等），运行时只做轻量链接与缓存，追求**稳定帧时间**。
+
+**抖动治理**
+1) **预热关键 shader**：首屏涉及的模糊/遮罩/渐变等效果用 `FragmentProgram.fromAsset` 预加载并离屏小面积绘制一次。  
+2) **约束 saveLayer**：仅为确需混合/模糊的区域开 `saveLayer`，其它改为绘制排序或 `drawAtlas/Vertices`。  
+3) **监控**：DevTools Timeline + GPU 计时，关注首次交互/路由切换的 p95 帧。
+
+**预热示例**
+```dart
+late FragmentProgram fp;
+Future<void> warmup() async {
+  fp = await FragmentProgram.fromAsset('shaders/blur.frag');
+  for (final r in [2.0, 4.0, 8.0]) {
+    final shader = fp.fragmentShader(floats: [r]);
+    final rec = ui.PictureRecorder();
+    final c = Canvas(rec);
+    c.drawRect(const Rect.fromLTWH(0,0,1,1), Paint()..shader = shader);
+    rec.endRecording();
+  }
+}
+```
+
+---
+
+# 37) Flutter Web 渲染后端：CanvasKit vs HTML（含 Wasm 引擎取舍）
+
+**两种后端**
+- **CanvasKit（Wasm+Skia）**：像素一致性与复杂绘制更强；包体偏大、冷启动较慢。  
+- **HTML（DOM/Canvas 2D）**：包体小、可达性/SEO 友好；高级滤镜/组合能力有限。
+
+**Dart2wasm vs dart2js**
+- **dart2wasm**：启动/数值密集场景更优；JS 互操作调试与生态在完善。  
+- **dart2js**：体积可控、生态成熟。视项目做 A/B。
+
+**构建开关**
+```bash
+flutter run -d chrome --web-renderer=canvaskit   # 或 html
+flutter build web --web-renderer=canvaskit --release
+```
+
+**选型建议**
+- 富媒体/图形密集 → CanvasKit；内容/表单业务 → HTML；混合场景可按路由拆分子应用分别构建。
+
+---
+
+# 38) 文本与排版系统：Paragraph/TextPainter 流水线、Bidi/合字/emoji 边界
+
+**流水线**
+1) 组装：`ParagraphBuilder`/`TextPainter` 按 span/样式构建文本。  
+2) 排版：`layout(maxWidth)` → shaping、断行、行高。  
+3) 绘制：`paint(canvas, offset)`；命中测试用 `getPositionForOffset`/`getBoxesForRange`。
+
+**要点**
+- **Bidi**：设置正确的 `TextDirection`；混排时以 `computeLineMetrics()` 调整对齐。  
+- **合字/字体特性**：`TextStyle(fontFeatures: [FontFeature.enable('liga')])`；不同平台字体实现差异需兜底。  
+- **Emoji/复合序列**：依赖字体覆盖；建议随包内置 emoji 字体或转图片资源。
+
+**命中测试示例**
+```dart
+final tp = TextPainter(
+  text: const TextSpan(text: 'مرحبا Hello 👋', style: TextStyle(fontSize: 16)),
+  textDirection: TextDirection.ltr,
+)..layout(maxWidth: 240);
+final pos = tp.getPositionForOffset(const Offset(50, 8)); // caret 位置
+final boxes = tp.getBoxesForSelection(const TextSelection(baseOffset: 0, extentOffset: 5));
+```
+
+---
+
+# 39) 图片解码与内存治理：ImageCache 策略、`instantiateImageCodec`、大图 OOM
+
+**尺寸匹配解码**
+- Widget 层：`Image.network(url, cacheWidth: w, cacheHeight: h)`。  
+- 底层：`ui.instantiateImageCodec(bytes, targetWidth, targetHeight)`。
+
+**缓存与预加载**
+- 调整 `painting.imageCache.maximumSize / maximumSizeBytes`；对临时大图使用 `evict()`。  
+- 首屏资源用 `precacheImage`，避免滚动时首次解码抖动。
+
+**OOM 防护**
+- 长图/原图优先服务端裁剪或目标尺寸解码；避免一帧内多次解码同资源。  
+- 动图控制帧率/转短视频；弱网场景启用降级占位与超时。
+
+**自定义解码示例**
+```dart
+Future<Image> decodeScaled(Uint8List bytes, Size size, double dpr) async {
+  final codec = await ui.instantiateImageCodec(
+    bytes,
+    targetWidth:  (size.width  * dpr).round(),
+    targetHeight: (size.height * dpr).round(),
+  );
+  final frame = await codec.getNextFrame();
+  return frame.image;
+}
+```
+
+---
+
+# 40) 自绘性能：`CustomPainter`、`saveLayer`、`PictureRecorder` 与过度绘制
+
+**原则**
+- 用 `RepaintBoundary` 隔离稳定区域；`shouldRepaint` 精确判断。  
+- 仅在确需混合/模糊时使用 `saveLayer`；能排序合成就别分层。  
+- 批处理相似图元：`drawAtlas`/`drawVertices`；先裁剪后绘制。
+
+**反模式**
+- 每帧新建大对象（`Path/TextPainter/Paint`）；复杂 Path 的布尔运算放在帧内。  
+- 小幅动画频繁改变透明度/滤镜导致 raster cache 失效。
+
+**复用 Picture**
+```dart
+ui.Picture buildPic() {
+  final rec = ui.PictureRecorder();
+  final c = Canvas(rec);
+  // ... draw ...
+  return rec.endRecording();
+}
+// paint: canvas.drawPicture(pic);
+```
+
+---
+
+# 41) 运行时着色器：`FragmentProgram` / `ShaderMask` / `BackdropFilter` 的能力与边界
+
+**API 速览**
+- `FragmentProgram.fromAsset → FragmentShader`：自定义片段着色器。  
+- `ShaderMask`：以 shader 作为颜色/alpha 掩模作用在子树。  
+- `BackdropFilter`：对已绘内容做滤镜，常伴随隐式 `saveLayer`，需裁剪减小开销。
+
+**跨平台一致性**
+- Web HTML 后端对自定义 shader 支持有限（需降级）；CanvasKit 更接近移动端。  
+- 注意颜色空间与精度差异，shader 中统一处理。
+
+**最佳实践**
+1) 控制离屏区域（`ClipRect`）；  
+2) 固定 uniforms 结构，减少 pipeline 抖动；  
+3) 首用前预热（见第 36 题）。
+
+**使用示例**
+```dart
+late FragmentProgram fp;
+late FragmentShader sh;
+Future<void> initShader() async {
+  fp = await FragmentProgram.fromAsset('shaders/ripple.frag');
+  sh = fp.fragmentShader(floats: [/* uniforms */]);
+}
+// paint:
+canvas.drawRect(size.toRect(), Paint()..shader = sh);
+```
+
+---
+
+# 42) Isolate 并行模型：`Isolate.run` / `compute` / `TransferableTypedData` 与实践
+
+**模型与通信**
+- UI Isolate 负责构建/布局/绘制；CPU 密集任务放后台 Isolate。  
+- Isolate 之间不共享内存，通过消息端口通信，默认会复制数据。
+
+**选择对比**
+- `compute(fn, arg)`：简单一次性任务；签名受限。  
+- `Isolate.run(fn)`：更灵活的一次性任务。  
+- **长驻 Isolate**：自管生命周期，适合持续解析/压缩/AI 前处理。
+
+**零拷贝大数据**
+```dart
+final ttd = TransferableTypedData.fromList([bytes]);
+sendPort.send(ttd);
+// 接收端：
+final b = (message as TransferableTypedData).materialize().asUint8List();
+```
+
+**实践准则**
+- 任务切分（>16ms 的计算放后台或分片）；  
+- 后台不访问 UI/插件；  
+- 及时 `kill` 与清理端口/计时器；  
+- 结合 `Stream` 回传进度与取消。
+
+```dart
+final out = await Isolate.run(() => heavyCompute(payload));
+// or
+final r = await compute(parseJson, raw);
+```
+---
+# 43) FFI（dart:ffi）与原生性能：布局/回调/内存所有权；对比 MethodChannel 的延迟/吞吐
+
+**何时选 FFI，何时选 MethodChannel**
+- **FFI**：CPU 密集型算法（编解码、图像/信号处理、加密）、需要**持续吞吐**与低延迟；无 UI 视图能力。
+- **MethodChannel**：系统能力调用（相机、蓝牙、通知）、一次一回的业务接口；易调试，可返回复杂对象。
+
+**性能画像**
+- **MethodChannel**：调用链 `Dart→(platform channel)→原生→返回`，序列化（JSON/StandardCodec）& 线程切换带来 ~百微秒级开销，**吞吐受限**。
+- **FFI**：直接函数调用，开销在纳微秒~微秒级，**适合短平快高频**；传大块内存时使用原生指针/零拷贝更优。
+
+**结构体与布局**
+- 显式声明与对齐，保持与原生一致：
+```dart
+class Sample extends ffi.Struct {
+  @ffi.Int32()
+  external int code;
+  @ffi.Array.multi([16,]) // 固定长度
+  external ffi.Array<ffi.Uint8> payload;
+}
+```
+- C/C++ 端避免可变长结构；跨平台注意 **endianness/对齐** 差异（iOS/arm64 与 x64）。
+
+**内存所有权与生命周期**
+- 谁分配谁释放：Dart 分配的 `ffi.malloc` → Dart 释放；原生返回的指针由**文档明确**释放策略。
+- 大对象使用 **`ffi.NativeFinalizer`** 绑定释放钩子，避免泄漏。
+
+**回调与线程**
+- 使用 `Pointer.fromFunction` 回调到 Dart；只在主 Isolate 安全回调 GUI 逻辑。
+- Android 注意在 **非 UI 线程** 完成回调，必要时原生切回主线程处理资源。
+
+**数据传输**
+- 避免反复从 Dart 复制到 C：用 `Uint8List` 的 `asTypedList(pointer, length)` 或 `Pointer<Uint8>` 共享视图。
+- 需要跨 Isolate 传输大数据，用 `TransferableTypedData`。
+
+**基线建议**
+- 为高频函数设计**批量接口**（一次传多批次数据）。
+- 添加“金丝雀”一致性测试：同输入 Dart 实现 vs FFI 实现输出一致。
+
+---
+
+# 44) PlatformView 进阶：Android Hybrid Composition vs Virtual Display/Texture；iOS 容器策略
+
+**Android 三种后端**
+1) **Virtual Display（旧）**：原生视图渲染到虚拟屏，再作为纹理合成到 Flutter →  
+   优点：兼容广；缺点：输入/滚动延迟、抗锯齿/透明度问题，复杂层级下掉帧明显。
+2) **Hybrid Composition**：把原生 View 直接插入 Android 视图层级与 Flutter 混合 →  
+   优点：输入/无障碍/可见性更自然；缺点：早期系统（< Android 10）合成代价高，**过度绘制**风险。
+3) **Texture Layer**（部分场景）：以 `Texture` 作为桥接，适合视频等流式内容。
+
+**选择建议**
+- Android 10+ 优先 **Hybrid Composition**；老设备可回退到 Virtual Display 或 Texture。
+- 避免 PlatformView 与透明/模糊叠加；`saveLayer` 会触发昂贵的离屏。
+
+**iOS 容器**
+- `UiKitView`（UIView）或 `UIKitViewController` 作为子视图嵌入；  
+- 注意 **手势与滚动冲突**：`gestureRecognizers` 协调、`hitTest` 链；  
+- 输入法与焦点：确保 `becomeFirstResponder` 与键盘回收时机。
+
+**常见坑**
+- **滚动嵌套**：PlatformView 内部滚动与外层 `Scrollable` 竞争 → 通过 `gestureRecognizers` 或外层禁用对应方向滚动解决。  
+- **裁剪**：确保 `clipBehavior` 与宿主视图 bounds 一致，避免“遮不住/溢出绘制”。
+
+---
+
+# 45) 手势系统深潜：GestureArena 裁决、自定义 Recognizer、滚动与手势竞争/require-fail
+
+**核心模型**
+- 事件命中后，多个 `GestureRecognizer` 进入同一 **GestureArena** 竞争。  
+- 每个识别器在合适的时机 **accept** 或 **reject**；Arena 选择胜者，其它全部失败。
+
+**常见冲突**
+- **滚动 vs 点击/长按**：滚动优先；轻触短移动需等待阈值（touch slop）后才交给滚动。
+- **水平翻页 vs 垂直滚动**：方向判定初期模糊 → 使用**方向锁**与更大的阈值。
+
+**可编程裁决**
+- `RawGestureDetector` + 自定义 `GestureRecognizer`：  
+  - 通过 `addPointer`、`handleEvent`、`didStopTrackingLastPointer` 自定义状态机；  
+  - 用 `GestureArenaTeam` 实现**团队裁决**（一荣俱荣/一损俱损）。
+- **require-fail 模式**：A 成功前要求 B 先失败 —— 可在 A 中延迟 `accept`，直到侦测到 B 的失败信号；或将二者加入同 Team 设“队长”策略。
+
+**示例：RawGestureDetector 注册自定义识别器**
+```dart
+class OneFingerHoldRecognizer extends OneSequenceGestureRecognizer {
+  VoidCallback? onHold;
+  Timer? _t;
+
+  @override void addPointer(PointerDownEvent e) { startTrackingPointer(e.pointer); _t = Timer(const Duration(milliseconds: 250), () {
+      resolve(GestureDisposition.accepted); onHold?.call();
+    });
+  }
+  @override void handleEvent(PointerEvent e) { if (e is PointerMoveEvent && e.delta.distance > kTouchSlop) resolve(GestureDisposition.rejected); }
+  @override void didStopTrackingLastPointer(int pointer) { _t?.cancel(); }
+  @override String get debugDescription => 'oneFingerHold';
+}
+```
+
+**调试**
+- `debugPrintGestureArenaDiagnostics` 观察裁决；  
+- 使用 `Listener` 打印原始指针，定位“谁先吃掉了事件”。
+
+---
+
+# 46) 自定义 RenderObject：RenderBox/RenderSliver 布局协议、命中测试、约束与裁剪
+
+**RenderBox 关键点**
+- **布局**：实现 `performLayout()`，读取父给的 `constraints`（如 `BoxConstraints`），为子 `layout(childConstraints)` 并设置 `size`。  
+- **预测布局**：重写 `computeDryLayout()` 提供“干测量”，优化上层约束探索。  
+- **绘制**：`paint(PaintingContext ctx, Offset offset)`；需要裁剪时使用 `ctx.pushClipRect/Path`。  
+- **命中测试**：`hitTestChildren`/`hitTestSelf` 返回 true 才能接收事件。
+
+**RenderSliver 要点**
+- 输出 `SliverGeometry`：`scrollExtent`、`paintExtent`、`maxPaintExtent`、`hitTestExtent` 等，影响滚动与绘制窗口。  
+- 只渲染可视区：根据 `constraints.scrollOffset` 与视窗大小计算当前应该布局/绘制的子项。
+
+**边界与性能**
+- 频繁变化的复杂绘制建议设为 **repaint boundary**；  
+- 自定义 clip 有成本，优先让子树自我裁剪；  
+- 命中测试尽量早返回，避免层层下钻。
+
+**样例骨架**
+```dart
+class ColoredBoxRender extends RenderBox {
+  Color color;
+  ColoredBoxRender(this.color);
+
+  @override
+  void performLayout() {
+    size = constraints.constrain(Size(100, 100));
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    context.canvas.drawRect(offset & size, Paint()..color = color);
+  }
+
+  @override
+  bool hitTestSelf(Offset position) => true;
+}
+```
+
+---
+
+# 47) 桌面平台工程化：窗口/菜单/托盘、多显示器 DPI、系统事件与插件适配
+
+**窗口与 DPI**
+- Windows 使用 **Per-Monitor DPI**，移动窗口到不同显示器会触发缩放变化；  
+- macOS `backingScaleFactor` 动态变化；  
+- 需要监听窗口尺寸与 DPI 变更（如 `window_size`/`window_manager` 插件）并**重算布局/缓存位图**。
+
+**菜单/托盘**
+- 平台差异大：Windows **跳转列表/托盘菜单**，macOS **菜单栏/状态栏项**，Linux 桌面环境不一；  
+- 封装统一接口，底层分别实现；注意图标模板（macOS 需单色/高分辨率）。
+
+**输入与快捷键**
+- 系统级快捷键（全局热键）与应用内快捷键权限不同；Windows 可能被其它程序抢占；  
+- 文本输入（IME）在多窗口/多焦点场景要同步候选框位置。
+
+**插件适配**
+- 使用 **联邦式插件**为 desktop 端单独实现；  
+- 文件对话框/拖放/剪贴板/通知等需不同原生 API；  
+- 打包/签名：macOS 公证（notarization）与沙箱权限、Windows 代码签名、Linux AppImage/DEB/RPM 各异。
+
+---
+
+# 48) Web 与 JS 互操作：`package:js`/`dart:js_interop`、CSP 限制与浏览器 API 边界
+
+**两条路径**
+- `package:js`（成熟）：通过 `@JS()` 声明外部函数/对象，使用 `allowInterop` 包装回调。
+- `dart:js_interop`（新）：更类型安全的 JS 绑定（需要 `--enable-experiment=js-interop` 视版本），配合 `package:web` 的 WebIDL 类型。
+
+**示例（package:js）**
+```dart
+@JS('navigator.clipboard.writeText')
+external Object _writeText(String text);
+// 调用
+await promiseToFuture(_writeText('hello'));
+```
+
+**CSP 与限制**
+- 严格 CSP 下禁止 `eval/new Function`，应选择 **HTML 渲染后端** 并避免 eval 类工具；  
+- 使用 `<meta http-equiv="Content-Security-Policy" content="script-src 'self' 'nonce-xyz'">`，对内联脚本注入 `nonce`；  
+- Web 平台能力（剪贴板、通知、全屏）常受 **HTTPS/用户手势** 约束，需要降级路径和权限提示。
+
+**调试与打包**
+- sourcemap 与跨源：配置 `crossorigin` 与 `SourceMap` 头；  
+- 小心 **Tree-Shaking**：未被显式引用的 `@JS()` 声明可能被摇掉，需 `@anonymous`/保留层导出。
+
+---
+
+# 49) 稳定性与上报：FlutterError/PlatformDispatcher/runZonedGuarded + 原生崩溃（Crashpad/dSYM/PDB）
+
+**捕获 Dart 层错误**
+```dart
+FlutterError.onError = (details) {
+  // UI 框架异常
+  reportFlutterError(details); 
+};
+PlatformDispatcher.instance.onError = (error, stack) {
+  reportError(error, stack); // 未处理异步错误
+  return true;
+};
+runZonedGuarded(() async {
+  runApp(const MyApp());
+}, (error, stack) => reportError(error, stack));
+```
+- 统一上报结构：`type/version/device/release/channel/timestamp/stack/extra`；  
+- 对日志做**脱敏**（PII、token），长日志**切片**上传。
+
+**原生崩溃**
+- **Android**：上报 NDK 崩溃（Crashlytics NDK/Sentry Native）；保留 **mapping.txt**（R8/Proguard）用于符号化。  
+- **iOS**：保留 **dSYM**，构建后自动上传到平台；注意 bitcode 关闭/开启对应符号处理。
+
+**串联与回溯**
+- 在每个发布版本生成**版本号 + git 提交**；Dart 使用 `--split-debug-info` 生成符号表，遇到混淆栈配合还原。
+
+**告警与回滚**
+- 将 p95/p99 崩溃率与特定路由/设备聚类，触发灰度**回滚**或功能开关降级。
+
+---
+
+# 50) 构建与混淆：`--split-debug-info`、`--obfuscate`、符号文件管理与可追溯性
+
+**开关与作用**
+- `--obfuscate`：混淆 Dart 符号，**不一定显著减小体积**，但提升逆向难度；  
+- `--split-debug-info=dir`：将符号与可还原信息分离到 `dir`，产物内不含可读符号。
+
+**CI 示例**
+```bash
+flutter build apk --release \
+  --obfuscate \
+  --split-debug-info=build/symbols/2025-09-20_001
+# 归档 symbols 目录并上传错误平台（Sentry/Crashlytics 自定义）
+```
+
+**管理与还原**
+- 每次发布保留 `symbols/<version>-<commit>`；  
+- 发生线上混淆栈时，用对应符号目录进行**栈还原**（平台 CLI 或自研脚本）。
+
+**取舍**
+- 安全 vs 调试：混淆提升逆向门槛，但排查门槛也上升；  
+- 与 **R8/Proguard**、iOS 符号化并行管理，保持发布流水线**可重复与可回溯**。
+
+---
+
+# 51) 动画进阶：物理动画、控制器协同、Ticker 泄漏与 `TickerMode`
+
+**物理动画（Physics-based）**
+- `SpringSimulation`、`FrictionSimulation`、`BouncingScrollSimulation` 可获得更真实的动效；  
+- 使用 `AnimationController.animateWith(simulation)` 直接驱动：
+```dart
+_controller.animateWith(SpringSimulation(
+  SpringDescription(mass: 1, stiffness: 300, damping: 20),
+  0, 1, 0, // from, to, initialVelocity
+));
+```
+
+**多控制器协同**
+- 使用 **同一个 `TickerProvider`** 创建多个 `AnimationController`，通过 `Interval/Curve` 做时序编排；  
+- 需要跨组件协作时封装 **动画驱动器（facade）**，暴露 `play/pause/seek`，避免将多个 controller 泄漏到 UI 层。
+
+**性能与泄漏**
+- `TickerProviderStateMixin`/`SingleTickerProviderStateMixin`，在 `dispose` **务必 `controller.dispose()`**；  
+- Dev 模式下 Flutter 会提示 **Ticker 泄漏**（`Ticker was active for ...`）；严格遵守生命周期。
+
+**`TickerMode` 与节流**
+- 非可见区域禁用动画：将子树包在 `TickerMode(enabled: false)`；  
+- 列表中复杂动画项，在不可见时暂停以降低掉帧与耗电。
+
+**架构建议**
+- 业务动画封装为 **stateless + external controller** 或基于 **ImplicitlyAnimatedWidget** 的可复用组件；  
+- 高刷设备（120Hz）下把大量 `setState` 转为 `AnimatedBuilder` 或 `ListenableBuilder`，减少重建范围。
+
+```dart
+AnimatedBuilder(
+  animation: _controller,
+  builder: (_, child) => Transform.scale(
+    scale: _controller.value,
+    child: child,
+  ),
+  child: const Icon(Icons.favorite),
+);
+```
+---
+# 52) 路由与深链：Navigator 2.0 + go_router 的 URL 映射/守卫/恢复；多栈与外部唤起
+
+**要点梳理**
+- **URL 即状态**：用 `RouteInformationParser`/`RouterDelegate`（或 `go_router` 封装）把地址栏 → 路由状态；返回键/刷新不丢失。
+- **守卫与重定向**：基于鉴权/AB 实验/参数合法性做 `redirect`；与状态源（如 `ValueNotifier/AuthStore`）联动。
+- **多栈**：Tab 场景用 `ShellRoute` + 每个 Tab 一个 `Navigator`，互不影响返回栈。
+- **深链**：支持 *App Links/URL Schemes*；冷启动与热启动都能把外部 URI 转换为路由状态。
+- **恢复**：持久化“当前路由 & 关键查询参数”，结合 `RestorationMixin`/自定义存储，进程杀死后回到同一页面。
+
+**go_router 示例（守卫 + 多栈 + 深链）**
+```dart
+final auth = ValueNotifier<bool>(false);
+
+final router = GoRouter(
+  initialLocation: '/home',
+  refreshListenable: auth, // 登录状态变化触发重定向
+  redirect: (ctx, state) {
+    final loggingIn = state.matchedLocation == '/login';
+    if (!auth.value && !loggingIn) return '/login?from=${Uri.encodeComponent(state.location)}';
+    if (auth.value && loggingIn) return state.queryParams['from'] ?? '/home';
+    return null;
+  },
+  routes: [
+    ShellRoute(
+      builder: (ctx, state, child) => Scaffold(body: child, bottomNavigationBar: ...),
+      routes: [
+        GoRoute(path: '/home', name: 'home', builder: (_, __) => const HomePage()),
+        GoRoute(path: '/profile', name: 'profile', builder: (_, __) => const ProfilePage()),
+      ],
+    ),
+    GoRoute(
+      path: '/login',
+      builder: (ctx, st) => LoginPage(onOk: () => auth.value = true),
+    ),
+    // 动态详情页，支持外部唤起 myapp://post/123
+    GoRoute(
+      path: '/post/:id',
+      name: 'post',
+      builder: (ctx, st) => PostPage(id: st.pathParameters['id']!),
+    ),
+  ],
+);
+```
+
+**外部唤起**
+- Android：`<intent-filter>` 配置 `autoVerify` + https 域；iOS：`Associated Domains` 配置 `applinks:your.site`。
+- URL Schemes 作为兜底（`myapp://`），注意安全校验（拒绝不可信来源注入的参数）。
+
+---
+
+# 53) 进程死亡与状态恢复：Android 被杀/iOS 内存压力后的恢复；与持久层/缓存一致性
+
+**风险与信号**
+- Android 低内存或系统回收 → 进程被杀；用户返回应用是**重启进程**（非冷启动）。iOS 在极端内存压力下亦可能被系统终止。
+- 若未持久化“路由 & 关键状态”，将丢失上下文。
+
+**恢复策略**
+1) **路由恢复**：持久化 `location` + 关键查询参数；重启时作为 `initialLocation` 或在 `GoRouter` 中 `redirect` 到保存的目标。
+2) **表单/草稿**：用 `RestorationMixin` + `RestorableXxx`（`RestorableTextEditingController` 等）或本地存储（Hive/Isar）。
+3) **服务端态优先**：UI 态与服务端态区分；恢复时先从缓存（IndexedDB/Isar）→ 网络再对齐，避免展示陈旧数据。
+
+**`RestorationMixin` 小样**
+```dart
+class EditPageState extends State<EditPage> with RestorationMixin {
+  final _title = RestorableTextEditingController();
+  @override String get restorationId => 'edit_page';
+  @override void restoreState(RestorationBucket? oldBucket, bool initial) {
+    registerForRestoration(_title, 'title');
+  }
+  @override void dispose() { _title.dispose(); super.dispose(); }
+}
+```
+
+**一致性要点**
+- **幂等提交**（Idempotency-Key）避免“恢复后重复提交”。  
+- **版本化缓存**：数据 schema 变更时升级/迁移，避免恢复失败。  
+- **启动路径分叉**：区分“冷启动 / 进程恢复 / 深链唤起”，进入不同的初始化流水线与指标上报。
+
+---
+
+# 54) 插件联邦化与发布（进阶）：多平台分仓、版本矩阵 CI、变更治理与文档化
+
+**工程布局**
+- 主包（Dart API）+ `platform_interface` + 各平台实现（android/ios/web/desktop），遵循“**受信 token + implements**”约束。
+- 平台包可独立发布版本，主包以 `dependencyOverrides` 或宽松范围（`^x.y.z`）适配。
+
+**CI/发布**
+- `melos` 管理工作区；`flutter_plugin_tools` 跑格式/分析/示例集成测试。
+- 矩阵构建：Android（多 ABI/SDK）、iOS（模拟器+真机架构）、Web（html/canvaskit）、macOS/Windows/Linux。
+- 自动生成 CHANGELOG、发布到 pub.dev，并上传符号/二进制到 Release。
+
+**变更治理**
+- 破坏性变更 `major++`；保留**弃用期**（@deprecated + 文档迁移指南）。  
+- 用 **合约测试**校验兼容：对 `platform_interface` 编写黑盒测试，所有平台实现必须通过。  
+- 提供**最小可运行示例**与 e2e，用于回归与用户演练。
+
+**文档化**
+- 平台特定能力单独章节（权限、Info.plist/AndroidManifest），一键 Copy 的初始化片段；FAQ（常见冲突、ProGuard/R8、bitcode/xcframework）。
+
+---
+
+# 55) 后台任务与平台协作：iOS `BackgroundTasks/PushKit`、Android Foreground Service/WorkManager
+
+**iOS**
+- **BGAppRefreshTask**（短时拉起）/**BGProcessingTask**（长时/需后台能力）：
+  - 任务列队由系统调度，**不可频繁**；需要在 `Info.plist` 声明 `Permitted background task scheduler identifiers`。
+  - 注册 & 提交：
+    ```swift
+    BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.app.refresh", using: nil) { task in ... }
+    let req = BGAppRefreshTaskRequest(identifier: "com.app.refresh"); try? BGTaskScheduler.shared.submit(req)
+    ```
+- **静默推送**（content-available=1）可唤起应用，速率与窗口受系统限制。
+- 音视频/定位等类目走各自的后台模式，严格遵守审核合规。
+
+**Android**
+- **WorkManager**：可靠的延时/周期任务（约束：网络/充电/空闲）：  
+  ```kotlin
+  val work = OneTimeWorkRequestBuilder<SyncWorker>()
+      .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()).build()
+  WorkManager.getInstance(ctx).enqueue(work)
+  ```
+- **Foreground Service**：需要**持续前台通知**；适合导航/录音/长传等。
+- **Doze/电池优化**：申请忽略可能影响审核；尽量设计可中断续传。
+
+**Flutter 侧实践**
+- 插件：`workmanager`、`background_fetch`、`flutter_local_notifications` 等；用 **平台通道**封装平台差异。  
+- **任务幂等**、**重试退避**、**网络/电量**约束；将重活分片，落盘断点信息。
+
+---
+
+# 56) 音视频/设备能力：相机/麦克风/蓝牙权限、帧处理通路与性能降级
+
+**权限与声明**
+- iOS 在 `Info.plist` 写入 `NSCameraUsageDescription/NSMicrophoneUsageDescription/Bluetooth...`；  
+- Android 运行时权限 + `uses-permission`；蓝牙在 Android 12+ 细分权限（`BLUETOOTH_CONNECT/SCAN/ADVERTISE`）。
+
+**相机帧处理**
+- `camera` 插件的 `startImageStream` → 把 YUV/NV12 帧送入 Isolate 或 FFI 处理，避免阻塞 UI：
+```dart
+controller.startImageStream((CameraImage img) {
+  _queue.add(img); // 后台 Isolate/FFI 消费
+});
+```
+- 处理路径：**零拷贝/少拷贝**（`Uint8List` 贴指针、`TransferableTypedData`），CPU 算法尽量 C/FFI。
+
+**音频**
+- 选择正确的 **Audio Session/Category**（iOS）与 **Audio Focus**（Android）；回放/录制/听筒/扬声器切换要有状态机。
+
+**蓝牙/硬件**
+- 平台差异大：GATT MTU、扫描权限、后台连接策略；设计**降级方案与超时**，避免阻塞主流程。
+
+**降级策略**
+- 能力探测（Feature flags），无权限或硬件缺失 → 提示并提供替代方案（上传图片代替拍照、软编解码代替硬编）。
+
+---
+
+# 57) 安全基线：反调试/Root 检测、证书锁定（Pinning）、WebView JSBridge、屏幕录制限制
+
+**防护面**
+- **证书锁定**：仅信任自家公钥/证书指纹；`dio` 可自定义 `HttpClient`：
+```dart
+final dio = Dio()
+  ..httpClientAdapter = DefaultHttpClientAdapter(
+    onHttpClientCreate: (client) {
+      final sc = SecurityContext(withTrustedRoots: false);
+      sc.setTrustedCertificatesBytes(myCaDer); // or sc.setClientAuthorities...
+      return HttpClient(context: sc)
+        ..badCertificateCallback = (cert, host, port) => cert.sha256 == pinnedSha256;
+    });
+```
+- **密钥与配置**：不把长期密钥放前端；走 **短期签名/STS**；本地凭据用 `flutter_secure_storage`。
+- **反调试/环境检测**：Root/Jailbreak、Hook/Frida、调试器附加；检测到风险 → 降级关键路径。
+- **WebView JSBridge**：白名单域、消息签名、禁用任意 `addJavascriptInterface`（Android < 4.2 漏洞历史）。
+- **截图/录屏限制**：Android `FLAG_SECURE`；iOS 无法完全阻止，只能弱化（变暗遮罩），向用户告知。
+
+**合规**
+- 最小化采集（PII/敏感字段脱敏）；**隐私弹窗与日志脱敏**；数据跨境按法规处理。
+
+---
+
+# 58) 高级国际化：动态切换、ICU 复数/性别、本地化热更新与时区一致
+
+**工程流水线**
+- ARB → `flutter gen-l10n` 生成 `AppLocalizations`；CI 检查漏翻与键冲突。
+- 运行期**动态切换**：`MaterialApp(locale: _locale, supportedLocales: ...)`；把 `_locale` 放在可观察对象中。
+
+**ICU 复数/性别**
+```arb
+"photosCount": "{count, plural, =0{No photos} =1{1 photo} other{{count} photos}}",
+"inviteUser": "{gender, select, male{He invited you} female{She invited you} other{They invited you}}"
+```
+
+**热更新与按需加载**
+- 大词库/长尾语言按需下载（加签/校验），落地后**版本化**并缓存；不影响编译期 key 约束。
+
+**时区一致**
+- 使用 `timezone`/`intl` 处理时区；服务端与客户端统一到 UTC 存储、展示时转换；谨慎处理夏令时/闰秒。
+
+**RTL/字体**
+- `Directionality` 自动；自定义组件注意 `EdgeInsetsDirectional`；字体回退链确保覆盖 CJK/emoji。
+
+---
+
+# 59) DevTools & 性能诊断：Timeline/CPU/Memory、`flutter trace`、PerformanceOverlay 读数
+
+**工具与读数**
+- **Timeline**：查看帧分解（Build/Layout/Paint/GPU）；找出长任务与抖动。
+- **CPU Profiler**：采样或追踪，识别热点函数与重复构建。
+- **Memory**：堆快照/泄漏跟踪，关注大对象与图片缓存。
+- **PerformanceOverlay**（`showPerformanceOverlay: true`）：上条（UI）、下条（Raster）柱状图高于帧预算线即掉帧。
+
+**技巧**
+- `debugProfileBuildsEnabled = true` 查看组件构建耗时；  
+- 用 `Timeline.timeSync('tag', () { ... })` 自定义埋点；  
+- `flutter trace --duration ... --trace-skia` 捕获低层图形信息分析合成开销。
+
+**定位思路**
+- 先确认是 **渲染瓶颈**（布局/绘制/GPU）还是 **逻辑瓶颈**（同步计算/IO）；  
+- 通过“二分法”逐步包围问题组件；对昂贵子树加 `RepaintBoundary`/`const` 化/缓存。
+
+---
+
+# 60) 分发与合规：iOS TestFlight/审核、Android App Bundle/Play Integrity、桌面签名/公证与自动更新
+
+**iOS**
+- **TestFlight**：内测分发，自动化上传 `ipa` 与 dSYM；  
+- 审核关注：后台权限说明、第三方登录/支付合规、隐私营养标签（Data Types/Purposes）。  
+- 签名与**公证**（macOS）：`hardened runtime` + notarization，沙箱权限（摄像头/屏幕录制）需在 `entitlements` 声明。
+
+**Android**
+- **AAB**（App Bundle）+ Play 分发；**Play Integrity**/SafetyNet 校验（防篡改/模拟器）；  
+- 多架构 split、下载优化；崩溃/ANR 指标影响曝光。
+
+**桌面**
+- Windows 代码签名（EV 证书更少拦截）、更新框架（Squirrel/WinSparkle）；  
+- macOS Sparkle/自研更新器，需满足签名/公证；  
+- Linux 多发行版包（DEB/RPM/AppImage/Flatpak）。
+
+**自动更新与回滚**
+- 版本通道（prod/beta/canary）；增量更新与**快速回退**策略。  
+- 配合错误/性能监控与特性开关，实现“**发现 → 熔断/回滚 → 复盘**”闭环。
+
+**合规**
+- 隐私政策/数据删除通道（GDPR/CCPA）；  
+- 加密出口合规（iOS Export Compliance）；  
+- 第三方 SDK 清单与最小化原则。
+
+---
